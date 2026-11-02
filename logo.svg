@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- 知識群島的分頁圖示：A「小車登島」——藍色圓形海面、沙灘、綠色小島，島上一台白色小車 -->
+  <circle cx="32" cy="32" r="31" fill="#38bdf8"/>
+  <ellipse cx="32" cy="38" rx="25" ry="15" fill="#f5deb3"/>
+  <ellipse cx="32" cy="36" rx="21" ry="12" fill="#4d9b5a"/>
+  <!-- 白色小車：車身、藍色條紋、車頂、兩個深色輪子 -->
+  <rect x="18" y="24" width="28" height="10" rx="3" fill="#ffffff"/>
+  <rect x="18" y="29" width="28" height="3" fill="#2563eb"/>
+  <rect x="24" y="17" width="13" height="8" rx="2" fill="#ffffff"/>
+  <rect x="33" y="19" width="3" height="5" fill="#7dd3fc"/>
+  <circle cx="24" cy="35" r="4.5" fill="#1f2937"/>
+  <circle cx="40" cy="35" r="4.5" fill="#1f2937"/>
+</svg>

@@ -1,0 +1,2058 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>知識群島｜音樂島</title>
+<link rel="icon" type="image/svg+xml" href="../logo.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- 字體：介面用昭源圓體、故事用芫荽（依臺灣標準字形），思源黑體當備用（都是開放授權） -->
+<link href="https://fonts.googleapis.com/css2?family=Chiron+GoRound+TC:wght@400;700;900&family=Iansui&family=Noto+Sans+TC:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1e293b;
+    --paper: #fffdf7;
+    --muted: #64748b;
+    --line: #e2e8f0;
+    --fest: #7c3aed;
+    --ok: #16a34a;
+    --bad: #dc2626;
+    --sky: #a9dcec;
+    --ui-font: "Chiron GoRound TC", "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+    --story-font: "Iansui", "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", serif;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; height: 100%; overflow: hidden; background: var(--sky);
+    font-family: var(--ui-font); color: var(--ink);
+    -webkit-user-select: none; user-select: none;
+  }
+  button { font-family: inherit; color: inherit; }
+  #scene { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; outline: none; }
+
+  /* ---------- 上方資訊列 ---------- */
+  .hud-top { position: fixed; top: 12px; left: 12px; right: 12px; z-index: 5; display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; pointer-events: none; }
+  .card-ink { background: rgba(255, 253, 247, .95); border: 2px solid var(--ink); border-radius: 14px; box-shadow: 3px 3px 0 var(--ink); }
+  .title-badge { pointer-events: auto; padding: 8px 14px; max-width: min(440px, 60vw); }
+  .title-badge h1 { margin: 0; font-size: 18px; font-weight: 900; }
+  .title-badge p { margin: 2px 0 0; font-size: 12px; color: var(--muted); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .chip { font-size: 12px; padding: 2px 8px; border-radius: 999px; border: 1.5px solid var(--c); color: var(--c); background: #fff; white-space: nowrap; }
+  .chip.done { background: var(--c); color: #fff; }
+  .right-col { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+  .btns { display: flex; gap: 8px; pointer-events: auto; }
+  .icon-btn { width: 44px; height: 44px; border-radius: 12px; border: 2px solid var(--ink); background: var(--paper); box-shadow: 3px 3px 0 var(--ink); font-size: 18px; font-weight: 900; cursor: pointer; padding: 0; }
+  .icon-btn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
+  .icon-btn.off { opacity: .4; text-decoration: line-through; }
+  .clock-badge { height: 44px; padding: 0 12px; display: flex; align-items: center; font-size: 14px; font-weight: 700; white-space: nowrap; pointer-events: none; }
+  #minimap { width: 220px; height: 110px; pointer-events: none; display: block; }
+
+  /* ---------- 目前的目標 ---------- */
+  #goal { position: fixed; left: 12px; bottom: 12px; z-index: 6; padding: 8px 16px; pointer-events: none; max-width: min(460px, 42vw); border-color: var(--fest); box-shadow: 3px 3px 0 var(--fest); }
+  #goal .k { font-size: 12px; color: var(--muted); }
+  #goal .v { font-size: 16px; font-weight: 900; color: var(--fest); line-height: 1.35; }
+  #goal .v.quote { font-family: var(--story-font); font-weight: 400; color: var(--ink); font-size: 15px; }
+
+  #prompt { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%); z-index: 6; padding: 12px 20px; font-size: 17px; font-weight: 700; cursor: pointer; white-space: nowrap; display: none; }
+  #prompt b { color: var(--c, var(--fest)); }
+  #toast { position: fixed; left: 50%; top: 96px; transform: translateX(-50%); z-index: 15; padding: 10px 18px; font-weight: 700; display: none; max-width: 92vw; text-align: center; }
+
+  /* ---------- 觸控 ---------- */
+  #touchUI { display: none; }
+  body.touch #touchUI { display: block; }
+  #joy { position: fixed; left: 24px; bottom: 24px; width: 130px; height: 130px; border-radius: 50%; z-index: 6; background: rgba(255, 253, 247, .55); border: 2px solid rgba(30, 41, 59, .6); touch-action: none; }
+  #joyKnob { position: absolute; left: 50%; top: 50%; width: 56px; height: 56px; margin: -28px 0 0 -28px; border-radius: 50%; background: var(--paper); border: 2px solid var(--ink); box-shadow: 2px 2px 0 var(--ink); pointer-events: none; }
+  #brakeBtn, #hornBtn, #lightBtn { position: fixed; border-radius: 50%; z-index: 6; border: 2px solid var(--ink); box-shadow: 3px 3px 0 var(--ink); font-weight: 900; touch-action: none; }
+  #brakeBtn { right: 24px; bottom: 40px; width: 84px; height: 84px; background: var(--paper); font-size: 16px; }
+  #hornBtn { right: 120px; bottom: 30px; width: 64px; height: 64px; background: #fde68a; font-size: 14px; }
+  #lightBtn { right: 120px; bottom: 104px; width: 64px; height: 64px; background: #e0e7ff; font-size: 14px; }
+  #lightBtn.on { background: #fde047; }
+  body.touch #btnLights { display: none; }
+  body.card #touchUI, body.card #prompt, body.exp #touchUI, body.exp #prompt, body.finale #touchUI, body.finale #prompt { display: none !important; }
+  body.finale .hud-top, body.finale #goal, body.exp #goal, body.card #goal { display: none; }
+
+  /* ---------- 小故事卡 ---------- */
+  #card { position: fixed; z-index: 12; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(460px, 92vw); max-height: 86vh; overflow-y: auto; padding: 18px 20px 16px; display: none; }
+  body.card #card { display: block; }
+  #card .head { display: flex; gap: 14px; align-items: center; margin-bottom: 10px; }
+  .stamp { width: 74px; height: 74px; border-radius: 50%; border: 4px solid var(--sc, #7c3aed); color: var(--sc, #7c3aed); display: flex; align-items: center; justify-content: center; font-size: 30px; font-weight: 900; flex: none; transform: rotate(-12deg); animation: stampIn .45s cubic-bezier(.2, 1.6, .4, 1); background: color-mix(in srgb, var(--sc, #7c3aed) 8%, white); }
+  @keyframes stampIn { from { transform: rotate(-12deg) scale(2.2); opacity: 0; } to { transform: rotate(-12deg) scale(1); opacity: 1; } }
+  #card .kicker { font-size: 13px; font-weight: 700; color: var(--muted); }
+  #card h2 { margin: 2px 0 0; font-size: 24px; font-weight: 900; }
+  #card .place { font-size: 14px; color: var(--muted); }
+  #card p { margin: 0 0 10px; line-height: 1.75; font-size: 16px; font-family: var(--story-font); -webkit-user-select: text; user-select: text; }
+  .primary, .ghost { padding: 10px 16px; border-radius: 12px; border: 2px solid var(--ink); font-size: 15px; font-weight: 700; cursor: pointer; }
+  .primary { background: var(--c, var(--fest)); color: #fff; box-shadow: 3px 3px 0 var(--ink); }
+  .primary:disabled { background: #cbd5e1; color: #64748b; box-shadow: none; cursor: not-allowed; }
+  .ghost { background: #fff; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0 0; }
+
+  /* ---------- 站點面板 ---------- */
+  #panel { position: fixed; z-index: 8; top: 76px; right: 12px; bottom: 12px; width: 420px; display: none; flex-direction: column; overflow: hidden; }
+  body.exp #panel { display: flex; }
+  .panel-head { padding: 12px 14px 10px; border-bottom: 2px dashed var(--line); position: relative; }
+  .panel-head .sec { font-size: 12px; font-weight: 700; color: var(--c); }
+  .panel-head h2 { margin: 2px 0 0; font-size: 22px; font-weight: 900; }
+  .panel-head .close { position: absolute; top: 10px; right: 10px; width: 36px; height: 36px; border-radius: 10px; border: 2px solid var(--ink); background: #fff; font-size: 16px; font-weight: 900; cursor: pointer; }
+  .panel-body { padding: 12px 14px 16px; overflow-y: auto; flex: 1; }
+  .panel-body p, .story-text { margin: 0 0 10px; line-height: 1.75; font-size: 15px; font-family: var(--story-font); -webkit-user-select: text; user-select: text; }
+  .panel-body h3 { margin: 14px 0 6px; font-size: 16px; }
+  .task { font-size: 15px; line-height: 1.6; background: color-mix(in srgb, var(--c) 10%, white); border-left: 4px solid var(--c); padding: 8px 10px; border-radius: 0; margin-bottom: 12px; font-family: var(--story-font); }
+  .opt { display: block; width: 100%; text-align: left; padding: 10px 12px; margin: 0 0 8px; border-radius: 10px; border: 2px solid var(--line); background: #fff; font-size: 15px; line-height: 1.5; cursor: pointer; }
+  .opt:hover { border-color: var(--c); }
+  .opt.right { border-color: var(--ok); background: #dcfce7; font-weight: 700; }
+  .opt.wrong { border-color: var(--bad); background: #fee2e2; }
+  .feedback { font-size: 15px; line-height: 1.6; padding: 8px 10px; border-radius: 8px; margin: 4px 0 10px; font-family: var(--story-font); }
+  .feedback.ok { background: #dcfce7; }
+  .feedback.no { background: #fee2e2; }
+  .play { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 999px; border: 2px solid var(--ink); background: #fef3c7; font-size: 15px; font-weight: 700; cursor: pointer; margin: 0 6px 8px 0; }
+  .play:active { transform: translateY(1px); }
+  .big-btns { display: flex; gap: 10px; margin: 10px 0; }
+  .big-btns button { flex: 1; padding: 18px 8px; font-size: 20px; font-weight: 900; border-radius: 14px; border: 2px solid var(--ink); box-shadow: 3px 3px 0 var(--ink); cursor: pointer; background: #fff; }
+  .big-btns button:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
+  .beats { display: grid; grid-template-columns: repeat(12, 1fr); gap: 4px; margin: 10px 0; }
+  .beats span { text-align: center; padding: 8px 0; border-radius: 8px; background: #f1f5f9; font-weight: 900; font-size: 14px; }
+  .beats span.acc { background: #fecaca; color: #991b1b; }
+  .beats span.now { outline: 3px solid var(--ink); }
+  .beats span.hit { background: #16a34a; color: #fff; }
+  .beats span.miss { background: #f97316; color: #fff; }
+  .seqview { display: flex; gap: 6px; flex-wrap: wrap; min-height: 34px; margin: 8px 0; }
+  .seqview span { padding: 4px 10px; border-radius: 8px; font-weight: 900; background: #ede9fe; }
+  .checks { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; }
+  .checks span { font-size: 13px; padding: 3px 8px; border-radius: 999px; background: #f1f5f9; color: var(--muted); }
+  .checks span.ok { background: #dcfce7; color: #166534; font-weight: 700; }
+  .hall { display: grid; gap: 6px; margin: 6px 0 10px; }
+  .hall div { padding: 6px 10px; border-radius: 8px; background: #faf5ff; font-size: 14px; line-height: 1.5; font-family: var(--story-font); }
+  .hall b { font-family: var(--ui-font); }
+  .fam-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .fam-grid button { padding: 10px 6px; border-radius: 10px; border: 2px solid var(--line); background: #fff; font-size: 15px; font-weight: 700; cursor: pointer; }
+  .fam-grid button.right { border-color: var(--ok); background: #dcfce7; }
+  .fam-grid button.wrong { border-color: var(--bad); background: #fee2e2; }
+  .dream { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .dream button { padding: 10px 6px; border-radius: 10px; border: 2px solid var(--line); background: #fff; font-size: 14px; font-weight: 700; cursor: pointer; }
+  .dream button.on { border-color: var(--c); background: color-mix(in srgb, var(--c) 15%, white); }
+
+  /* ---------- 開場與說明 ---------- */
+  .overlay { position: fixed; inset: 0; z-index: 20; display: flex; align-items: center; justify-content: center; background: rgba(169, 220, 236, .72); padding: 16px; }
+  .overlay.hidden { display: none; }
+  .dialog { max-width: 480px; width: 100%; padding: 22px 22px 18px; max-height: 92vh; overflow-y: auto; }
+  .dialog h2 { margin: 0 0 4px; font-size: 26px; font-weight: 900; }
+  .dialog .sub { margin: 0 0 12px; color: var(--muted); font-size: 14px; line-height: 1.7; }
+  .game-name { font-size: 13px; font-weight: 700; color: var(--fest); margin-bottom: 2px; }
+  .story p { margin: 0 0 8px; font-size: 16px; line-height: 1.8; color: var(--ink); font-family: var(--story-font); }
+  .story p:last-child { background: #f5f3ff; border-left: 4px solid var(--fest); padding: 6px 10px; }
+  .tasks { list-style: none; padding: 0; margin: 4px 0 8px; display: grid; gap: 8px; }
+  .tasks li { display: flex; gap: 12px; align-items: center; padding: 10px 12px; border: 2px solid var(--line); border-radius: 12px; background: #fff; }
+  .tasks li.done { border-color: var(--ok); background: #f0fdf4; }
+  .tasks .num { width: 32px; height: 32px; flex: none; border-radius: 50%; background: var(--fest); color: #fff; font-weight: 900; display: flex; align-items: center; justify-content: center; }
+  .tasks li.done .num { background: var(--ok); }
+  .tasks .t { font-size: 16px; font-weight: 900; }
+  .tasks .d { font-size: 15px; color: var(--muted); line-height: 1.5; font-family: var(--story-font); }
+  .hint-small { margin: 0 0 12px; font-size: 13px; color: var(--muted); text-align: right; }
+  .keys { display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; font-size: 15px; margin: 10px 0 16px; align-items: center; }
+  kbd { display: inline-block; min-width: 26px; text-align: center; padding: 2px 6px; border: 1.5px solid var(--ink); border-bottom-width: 3px; border-radius: 6px; background: #fff; font-family: inherit; font-size: 13px; font-weight: 700; }
+
+  @media (max-width: 819px) {
+    #panel { top: auto; left: 8px; right: 8px; bottom: 8px; width: auto; height: 54vh; }
+    .title-badge h1 { font-size: 15px; }
+    .title-badge p, .clock-text { display: none; }
+    .btns { gap: 6px; }
+    .icon-btn { width: 40px; height: 40px; font-size: 16px; }
+    .clock-badge { height: 40px; padding: 0 9px; }
+    #minimap { width: 150px; height: 75px; }
+    #goal { left: 50%; transform: translateX(-50%); bottom: 170px; max-width: 92vw; }
+    #prompt { font-size: 15px; bottom: 240px; }
+  }
+</style>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "cannon-es": "https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cannon-es.js"
+  }
+}
+</script>
+</head>
+<body>
+<canvas id="scene" tabindex="0"></canvas>
+
+<div class="hud-top">
+  <div class="title-badge card-ink">
+    <h1 id="title">環球音樂節島</h1>
+    <p id="subtitle"></p>
+    <div class="chips" id="chips"></div>
+  </div>
+  <div class="right-col">
+    <div class="btns">
+      <div class="clock-badge card-ink" id="clockLabel">☀️ 白天</div>
+      <button class="icon-btn off" id="btnLights" title="車燈開關（L）">💡</button>
+      <button class="icon-btn" id="btnHelp" title="操作說明">?</button>
+      <button class="icon-btn" id="btnSound" title="音效開關">🔊</button>
+      <button class="icon-btn" id="btnMusic" title="背景音樂開關">♫</button>
+      <button class="icon-btn" id="btnReset" title="回到停車場">↺</button>
+    </div>
+    <canvas id="minimap" class="card-ink" width="440" height="220"></canvas>
+  </div>
+</div>
+
+<div id="goal" class="card-ink"><div class="k" id="goalK">目前的任務</div><div class="v" id="goalV">——</div></div>
+<div id="prompt" class="card-ink"></div>
+<div id="toast" class="card-ink"></div>
+
+<div id="touchUI">
+  <div id="joy"><div id="joyKnob"></div></div>
+  <button id="brakeBtn">煞車</button>
+  <button id="hornBtn">喇叭</button>
+  <button id="lightBtn">車燈</button>
+</div>
+
+<div id="card" class="card-ink"></div>
+
+<div id="panel" class="card-ink">
+  <div class="panel-head">
+    <div class="sec" id="pSec"></div>
+    <h2 id="pName"></h2>
+    <button class="close" id="pClose" title="離開">✕</button>
+  </div>
+  <div class="panel-body" id="pBody"></div>
+</div>
+
+<div class="overlay" id="loader">
+  <div class="dialog card-ink">
+    <div class="game-name" id="lGame"></div>
+    <h2 id="lTitle">環球音樂節島</h2>
+    <div class="sub story" id="lSub">載入中……</div>
+    <ol class="tasks" id="lTasks"></ol>
+    <p class="hint-small">操作方式在右上角的「?」</p>
+    <div id="lPlayer"></div>
+    <button class="primary" id="btnStart" disabled style="width:100%">載入中……</button>
+  </div>
+</div>
+
+<div class="overlay hidden" id="help">
+  <div class="dialog card-ink">
+    <h2>怎麼玩</h2>
+    <p class="sub">開著巡演巴士到各個發光的圓圈，按 Enter（手機點提示）就能進站。在琴鍵大道上開車會彈出音階；搖滾車庫的樂器箱要用巴士推上舞臺；職人城要到公車站載乘客。</p>
+    <div class="keys" id="hKeys"></div>
+    <div id="hPlayer"></div>
+    <button class="primary" id="btnHelpClose" style="width:100%">知道了</button>
+  </div>
+</div>
+
+<!-- 載入失敗時顯示原因，不要一直卡在「載入中」 -->
+<script>
+  (function () {
+    function fail(msg) {
+      if (window.__musicReady) return;
+      var sub = document.getElementById('lSub'), btn = document.getElementById('btnStart');
+      sub.innerHTML = '<b style="color:#dc2626">網頁沒有順利載入。</b><br>' + msg +
+        '<br><br>請確認：①電腦有連上網路　②用 Chrome 或 Edge 開啟（對 index.html 按右鍵 →「開啟方式」→ Chrome）　③Chrome 設定 → 系統 →「使用圖形加速功能」要開啟。';
+      btn.textContent = '重新載入'; btn.disabled = false; btn.onclick = function () { location.reload(); };
+    }
+    window.addEventListener('error', function (e) {
+      if (e.target && e.target.tagName && e.target.tagName !== 'SCRIPT') return;
+      fail('錯誤訊息：' + (e.message || '無法載入程式檔'));
+    }, true);
+    window.addEventListener('unhandledrejection', function (e) { fail('錯誤訊息：' + (e.reason && e.reason.message || e.reason)); });
+    setTimeout(function () { fail('等了 20 秒還沒載入完成。'); }, 20000);
+  })();
+</script>
+
+<!-- 教材內容（老師可以修改這個檔案） -->
+<script src="content.js"></script>
+<script src="../travel.js"></script>
+<script src="../player.js"></script>
+
+<script type="module">
+import * as THREE from 'three';
+import * as CANNON from 'cannon-es';
+
+// ============================================================
+// 基本設定
+// ============================================================
+const M = window.MUSIC_CONTENT;
+const G = 9.8;
+const isTouch = matchMedia('(pointer: coarse)').matches;
+if (isTouch) document.body.classList.add('touch');
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const paras = (s) => String(s).split('\n').map((l) => `<p>${esc(l)}</p>`).join('');
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+let seed = 31;
+const rand = () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646;
+const CH_COLOR = { world: '#ea580c', rock: '#dc2626', asia: '#db2777', pros: '#7c3aed' };
+
+// ============================================================
+// 字型：先把遊戲會用到的字都下載好，地上的字才會是對的字體
+// ============================================================
+const USED_TEXT = JSON.stringify(M) + '開幕大舞臺世界舞臺搖滾車庫亞洲音樂街音樂職人城琴鍵大道中國五聲日本陰音階琉球音階非洲歐洲拉丁美洲大洋洲公車站巡演巴士停車場環球音樂節爵士鼓貝斯電吉他主唱舞臺→←↑↓力與運動實驗島（物理）開過拱門就到了！往';
+await Promise.race([
+  Promise.all([
+    document.fonts.load('900 48px "Chiron GoRound TC"', USED_TEXT),
+    document.fonts.load('400 16px "Iansui"', USED_TEXT),
+    document.fonts.load('700 48px "Noto Sans TC"', USED_TEXT)
+  ]).catch(() => {}),
+  new Promise((r) => setTimeout(r, 5000))
+]);
+
+// ============================================================
+// 渲染器、場景、燈光
+// ============================================================
+const canvas = $('scene');
+let renderer;
+try { renderer = new THREE.WebGLRenderer({ canvas, antialias: true }); }
+catch (e) { throw new Error('這台電腦的瀏覽器無法啟動 3D 繪圖（WebGL）。'); }
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+const scene = new THREE.Scene();
+scene.background = new THREE.Color('#a9dcec');
+scene.fog = new THREE.Fog('#a9dcec', 120, 320);
+const camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.1, 1500);
+const hemi = new THREE.HemisphereLight('#ffffff', '#cbbf98', 1.6);
+scene.add(hemi);
+const sun = new THREE.DirectionalLight('#fff3dc', 2.2);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left: -45, right: 45, top: 45, bottom: -45, near: 1, far: 200 });
+sun.shadow.bias = -0.0004;
+scene.add(sun, sun.target);
+const seaMat = new THREE.MeshStandardMaterial({ color: '#4fa3d1', roughness: 0.35 });
+const glowMats = [];     // 晚上會發光的材質（站點圓圈、舞臺燈）
+
+// ============================================================
+// 物理世界
+// ============================================================
+const world = new CANNON.World({ gravity: new CANNON.Vec3(0, -G, 0) });
+world.broadphase = new CANNON.NaiveBroadphase();
+world.allowSleep = true;
+world.defaultContactMaterial.friction = 0.3;
+function staticBox(cx, cy, cz, hx, hy, hz, rotY = 0) {
+  const b = new CANNON.Body({ type: CANNON.Body.STATIC, shape: new CANNON.Box(new CANNON.Vec3(hx, hy, hz)) });
+  b.position.set(cx, cy, cz);
+  if (rotY) b.quaternion.setFromEuler(0, rotY, 0);
+  b.aabbNeedsUpdate = true;
+  world.addBody(b);
+  return b;
+}
+staticBox(30, -1, 0, 170, 1, 80);     // 地面（上緣 y = 0）
+
+// ============================================================
+// 小工具：材質、方塊、地上的字、布條
+// ============================================================
+const matCache = {};
+function mat(color, opt = {}) {
+  const key = color + JSON.stringify(opt);
+  return matCache[key] || (matCache[key] = new THREE.MeshStandardMaterial({ color, roughness: 0.85, metalness: 0, ...opt }));
+}
+function box(w, h, d, color, opt) { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(color, opt)); m.castShadow = m.receiveShadow = true; return m; }
+function cyl(rt, rb, h, color, seg = 16, opt) { const m = new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, seg), mat(color, opt)); m.castShadow = m.receiveShadow = true; return m; }
+// 畫一張文字貼圖
+function textTexture(text, { size = 72, color = '#1e293b', bg = null, border = null, pad = 24, font = '"Chiron GoRound TC","Noto Sans TC",sans-serif', weight = 900 } = {}) {
+  const c = document.createElement('canvas'), ctx = c.getContext('2d');
+  const lines = String(text).split('\n'), lh = size * 1.3, f = `${weight} ${size}px ${font}`;
+  ctx.font = f;
+  const w = Math.ceil(Math.max(...lines.map((l) => ctx.measureText(l).width)) + pad * 2), h = Math.ceil(lh * lines.length + pad * 2);
+  c.width = w; c.height = h; ctx.font = f;
+  if (bg) { ctx.fillStyle = bg; ctx.beginPath(); ctx.roundRect(4, 4, w - 8, h - 8, Math.min(28, h / 3)); ctx.fill(); }
+  if (border) { ctx.lineWidth = 8; ctx.strokeStyle = border; ctx.stroke(); }
+  ctx.fillStyle = color; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  lines.forEach((l, i) => ctx.fillText(l, w / 2, pad + lh * (i + 0.5) + size * 0.05));
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8;
+  return { tex: t, aspect: w / h };
+}
+// 印在地上的字（從鏡頭的方向讀起來是正的）
+function groundText(text, x, z, height, opts = {}) {
+  const { tex, aspect } = textTexture(text, opts);
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(height * aspect, height), new THREE.MeshStandardMaterial({ map: tex, transparent: true, roughness: 0.9, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -3 }));
+  m.rotation.x = -Math.PI / 2; m.position.set(x, 0.08, z); m.receiveShadow = true;
+  scene.add(m);
+  return m;
+}
+// 立著的布條／招牌（面向南方，也就是鏡頭）
+function banner(text, x, y, z, height, opts = {}) {
+  const { tex, aspect } = textTexture(text, opts);
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(height * aspect, height), new THREE.MeshStandardMaterial({ map: tex, transparent: true, roughness: 0.8 }));
+  m.position.set(x, y, z);
+  scene.add(m);
+  return m;
+}
+
+// ============================================================
+// 吉他形狀的島：下琴身（大圓）、上琴身（小圓）、琴頸、琴頭
+// ============================================================
+const C1 = { x: -65, z: 0, r: 60 }, C2 = { x: 5, z: 0, r: 45 };
+const NECK = { x0: 5 + Math.sqrt(45 * 45 - 11 * 11), x1: 150, hw: 11 };
+const HEAD = { x0: 150, x1: 182, hw: 20 };
+const OUTLINE = (() => {
+  const pts = [], arc = (c, a0, a1) => { const n = Math.ceil(Math.abs(a1 - a0) / 0.09); for (let i = 0; i <= n; i++) { const a = lerp(a0, a1, i / n); pts.push({ x: c.x + Math.cos(a) * c.r, z: c.z + Math.sin(a) * c.r }); } };
+  const aN = Math.atan2(-NECK.hw, NECK.x0 - C2.x), aI2 = Math.atan2(-38.2, -18.75 - C2.x), aI1 = Math.atan2(-38.2, -18.75 - C1.x);
+  arc(C2, aN, aI2);
+  arc(C1, aI1, -2 * Math.PI - aI1);
+  arc(C2, -aI2, -aN);
+  pts.push({ x: HEAD.x0, z: NECK.hw }, { x: HEAD.x0, z: HEAD.hw }, { x: HEAD.x1 - 5, z: HEAD.hw }, { x: HEAD.x1, z: HEAD.hw - 5 },
+    { x: HEAD.x1, z: -HEAD.hw + 5 }, { x: HEAD.x1 - 5, z: -HEAD.hw }, { x: HEAD.x0, z: -HEAD.hw }, { x: HEAD.x0, z: -NECK.hw });
+  return pts;
+})();
+// 往力與運動實驗島（物理）的橋：從吉他尾端往西伸出去，開到橋尾的拱門就換回物理島的網頁
+const PHYS_BRIDGE = { z: 0, x1: -122, x2: -168, hw: 4, url: '../index.html?from=music' };
+const PHYS_COLOR = '#1d4ed8';
+function inside(px, pz) {
+  let ins = false;
+  for (let i = 0, j = OUTLINE.length - 1; i < OUTLINE.length; j = i++) {
+    const a = OUTLINE[i], b = OUTLINE[j];
+    if ((a.z > pz) !== (b.z > pz) && px < ((b.x - a.x) * (pz - a.z)) / (b.z - a.z) + a.x) ins = !ins;
+  }
+  return ins;
+}
+{
+  // 島：吉他面板的木頭紋路＋琴頸深色木頭
+  const grain = (() => {
+    const c = document.createElement('canvas'); c.width = c.height = 512;
+    const x = c.getContext('2d');
+    x.fillStyle = '#e9c891'; x.fillRect(0, 0, 512, 512);
+    for (let i = 0; i < 70; i++) {
+      x.strokeStyle = `rgba(150,100,45,${0.05 + rand() * 0.08})`; x.lineWidth = 1 + rand() * 3;
+      const y = rand() * 512; x.beginPath(); x.moveTo(0, y);
+      for (let k = 0; k <= 8; k++) x.lineTo(k * 64, y + Math.sin(k + i) * 6);
+      x.stroke();
+    }
+    const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(0.03, 0.03); t.colorSpace = THREE.SRGBColorSpace;
+    return t;
+  })();
+  const shape = new THREE.Shape(OUTLINE.map((p) => new THREE.Vector2(p.x, -p.z)));
+  const geo = new THREE.ExtrudeGeometry(shape, { depth: 4, bevelEnabled: false });
+  geo.rotateX(-Math.PI / 2);
+  const land = new THREE.Mesh(geo, [new THREE.MeshStandardMaterial({ map: grain, roughness: 0.9 }), mat('#8a5a2b')]);
+  land.position.y = -4; land.receiveShadow = true;
+  scene.add(land);
+  // 琴頸（深色木頭）與琴頭
+  const neck = box(NECK.x1 - NECK.x0 + 6, 0.06, NECK.hw * 2, '#5b3a22');
+  neck.position.set((NECK.x0 + NECK.x1) / 2 + 3, 0.01, 0); neck.castShadow = false; scene.add(neck);
+  const head = box(HEAD.x1 - HEAD.x0 - 2, 0.06, HEAD.hw * 2 - 2, '#3f2716');
+  head.position.set((HEAD.x0 + HEAD.x1) / 2, 0.012, 0); head.castShadow = false; scene.add(head);
+  // 琴頭的弦鈕
+  [-1, 1].forEach((s) => [156, 165, 174].forEach((x) => {
+    const peg = cyl(1.1, 1.1, 1.2, '#d4d4d8', 12, { metalness: 0.6, roughness: 0.3 }); peg.position.set(x, 0.6, s * (HEAD.hw + 0.8)); scene.add(peg);
+    staticBox(x, 0.6, s * (HEAD.hw + 0.8), 1.1, 0.6, 1.1);
+  }));
+  // 海
+  const sea = new THREE.Mesh(new THREE.PlaneGeometry(3000, 3000), seaMat);
+  sea.rotation.x = -Math.PI / 2; sea.position.y = -1.5; scene.add(sea);
+  // 島邊的隱形牆（吉他尾端留一個缺口給往物理島的橋）
+  for (let i = 0; i < OUTLINE.length; i++) {
+    const a = OUTLINE[i], b = OUTLINE[(i + 1) % OUTLINE.length];
+    const dx = b.x - a.x, dz = b.z - a.z, L = Math.hypot(dx, dz);
+    if (L < 0.01) continue;
+    if ((a.x + b.x) / 2 < PHYS_BRIDGE.x1 + 6 && Math.abs((a.z + b.z) / 2 - PHYS_BRIDGE.z) < 7) continue;
+    let nx = dz / L, nz = -dx / L;
+    const mx = (a.x + b.x) / 2, mz = (a.z + b.z) / 2;
+    if (inside(mx + nx * 1.5, mz + nz * 1.5)) { nx = -nx; nz = -nz; }
+    staticBox(mx + nx * 1.2, 1.5, mz + nz * 1.2, L / 2 + 0.6, 1.5, 0.6, -Math.atan2(dz, dx));
+  }
+}
+
+// ============================================================
+// 往力與運動實驗島的木橋（和物理島那一端的橋一樣），橋尾是藍色拱門
+// ============================================================
+{
+  const { z, x1, x2, hw } = PHYS_BRIDGE;
+  const L = x1 - x2, mid = (x1 + x2) / 2;
+  const deck = box(L + 4, 0.4, hw * 2, '#cbb38a'); deck.position.set(mid + 2, -0.19, z); scene.add(deck);
+  for (let x = x2 + 1; x < x1 + 3; x += 2) { const pl = box(0.08, 0.02, hw * 2 - 0.4, '#a8916a'); pl.position.set(x, 0.02, z); pl.castShadow = false; scene.add(pl); }
+  staticBox(mid, -0.5, z, L / 2 + 2, 0.5, hw);                   // 橋面（島的地面只到 x = -140）
+  [-1, 1].forEach((s) => {
+    const zz = z + s * (hw + 0.1);
+    [0.4, 0.85].forEach((y) => { const r = box(L, 0.12, 0.12, '#ffffff'); r.position.set(mid, y, zz); scene.add(r); });
+    for (let x = x2; x <= x1; x += 3) { const p = box(0.18, 1, 0.18, '#475569'); p.position.set(x, 0.5, zz); scene.add(p); }
+    staticBox(mid, 0.75, zz + s * 0.1, L / 2, 0.75, 0.15);
+    staticBox(x1 - 1, 1.5, z + s * (hw + 4.5), 0.5, 1.5, 4.3);   // 橋頭兩側補牆，接到島邊的牆
+  });
+  [-1, 1].forEach((s) => { const c = box(0.6, 6, 0.6, PHYS_COLOR); c.position.set(x2 + 2, 3, z + s * (hw + 0.4)); scene.add(c); });
+  const beam = box(0.6, 0.8, hw * 2 + 1.4, PHYS_COLOR); beam.position.set(x2 + 2, 6.2, z); scene.add(beam);
+  staticBox(x2 - 0.5, 1.5, z, 0.5, 1.5, hw + 1);
+  // 拱門上的招牌（面向鏡頭）＋橋面上印的字
+  banner('力與運動實驗島（物理）\n開過拱門就到了！', x2 + 2, 8.2, z, 2.2, { size: 60, color: '#fff', bg: PHYS_COLOR });
+  groundText('← 往 力與運動實驗島（物理）', mid + 6, z, 1.6, { color: PHYS_COLOR, bg: 'rgba(255,253,247,.85)' });
+}
+
+// ============================================================
+// 各區域的位置
+// ============================================================
+const SPAWN = { x: -24, z: 10 };
+const MAIN = { x: 12, z: 0, r: 11 };               // 開幕大舞臺（吉他的音孔）
+const GLOBE = { x: -68, z: 0 };                    // 世界舞臺中央的地球儀
+const ROCK = { x: 2, z: 32, hw: 7, hd: 4.5 };      // 搖滾舞臺（地上的範圍）
+const LANES = [
+  { id: 'china', z: -7, color: '#ef4444', base: 60, steps: [0, 2, 4, 7, 9], inst: 'zheng' },
+  { id: 'in', z: 0, color: '#8b5cf6', base: 57, steps: [0, 2, 3, 7, 8], inst: 'koto' },
+  { id: 'ryukyu', z: 7, color: '#0ea5e9', base: 60, steps: [0, 4, 5, 7, 11], inst: 'sanshin' }
+];
+const KEYS = { x0: 52, x1: 148, n: 10 };            // 琴鍵大道：10 格
+const STATIONS = [
+  { id: 'africa', ch: 'world', x: -86, z: 20, name: '非洲鼓圈', kind: 'region' },
+  { id: 'europe', ch: 'world', x: -86, z: -20, name: '弗拉門哥廣場', kind: 'region' },
+  { id: 'latin', ch: 'world', x: -50, z: -26, name: '探戈街角', kind: 'region' },
+  { id: 'oceania', ch: 'world', x: -50, z: 26, name: '大洋洲海岸', kind: 'region' },
+  { id: 'worldquiz', ch: 'world', x: -68, z: 14, name: '世界音樂小測驗', kind: 'worldquiz' },
+  { id: 'rockhall', ch: 'rock', x: 14, z: 20, name: '搖滾名人堂', kind: 'rockhall' },
+  { id: 'asiahall', ch: 'asia', x: 165, z: 0, name: '亞洲音樂視聽室', kind: 'asiahall' },
+  { id: 'proshall', ch: 'pros', x: 26, z: -16, name: '音樂職人服務臺', kind: 'proshall' }
+];
+const BUS_STOP = { x: 6, z: -22 };
+const PLACES = {
+  stage: { x: MAIN.x, z: MAIN.z, r: 9 },
+  office: { x: -26, z: -14, r: 5 },
+  studio: { x: -12, z: -28, r: 5 },
+  composer: { x: 2, z: -32, r: 5 },
+  school: { x: 18, z: -30, r: 5 },
+  clinic: { x: 32, z: -20, r: 5 }
+};
+
+// ============================================================
+// 聲音：Web Audio 即時合成（不使用任何錄音檔）
+// ============================================================
+const AUDIO_KEY = 'musicIsland.audio';
+const audioPref = { sfx: true, music: true };
+try { Object.assign(audioPref, JSON.parse(localStorage.getItem(AUDIO_KEY)) || {}); } catch (e) { /* 預設 */ }
+let actx = null, sfxBus, instBus, musicBus, noiseBuf, distCurve;
+function ac() {
+  if (!actx) {
+    actx = new (window.AudioContext || window.webkitAudioContext)();
+    sfxBus = actx.createGain(); sfxBus.connect(actx.destination);
+    instBus = actx.createGain(); instBus.gain.value = 0.9; instBus.connect(actx.destination);
+    musicBus = actx.createGain(); musicBus.gain.value = 0.5; musicBus.connect(actx.destination);
+    noiseBuf = actx.createBuffer(1, actx.sampleRate, actx.sampleRate);
+    const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    distCurve = new Float32Array(1024); for (let i = 0; i < 1024; i++) { const x = (i / 1023) * 2 - 1; distCurve[i] = Math.tanh(x * 4); }
+    applySfx();
+  }
+  if (actx.state === 'suspended') actx.resume();
+  return actx;
+}
+function applySfx() { if (sfxBus) { sfxBus.gain.value = audioPref.sfx ? 1 : 0; instBus.gain.value = audioPref.sfx ? 0.9 : 0; } }
+const hz = (m) => 440 * Math.pow(2, (m - 69) / 12);
+// 基本零件：振盪器＋音量包絡
+function tone(out, type, f, t, dur, vol, { a = 0.01, r = null, glide = null, vib = 0, vibRate = 5.5, filter = null, q = 1 } = {}) {
+  const c = actx, o = c.createOscillator(), g = c.createGain();
+  o.type = type; o.frequency.setValueAtTime(f, t);
+  if (glide) o.frequency.exponentialRampToValueAtTime(glide, t + dur * 0.9);
+  if (vib) { const lfo = c.createOscillator(), lg = c.createGain(); lfo.frequency.value = vibRate; lg.gain.value = f * vib; lfo.connect(lg).connect(o.frequency); lfo.start(t); lfo.stop(t + dur + 0.1); }
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(vol, t + a);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur + (r || 0));
+  let node = o;
+  if (filter) { const fl = c.createBiquadFilter(); fl.type = filter.type; fl.frequency.value = filter.f; fl.Q.value = q; node.connect(fl); node = fl; }
+  node.connect(g).connect(out);
+  o.start(t); o.stop(t + dur + (r || 0) + 0.05);
+  return g;
+}
+function noise(out, t, dur, vol, type, f, q = 1) {
+  const c = actx, s = c.createBufferSource(), fl = c.createBiquadFilter(), g = c.createGain();
+  s.buffer = noiseBuf; fl.type = type; fl.frequency.value = f; fl.Q.value = q;
+  g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  s.connect(fl).connect(g).connect(out); s.start(t, Math.random() * 0.5); s.stop(t + dur + 0.02);
+}
+// 各種樂器（音色是「模擬」，讓學生聽出特色，不是真實錄音）
+const INST = {
+  kick: (o, t, v = 1) => tone(o, 'sine', 150, t, 0.22, 0.6 * v, { glide: 45, a: 0.003 }),
+  snare: (o, t, v = 1) => { noise(o, t, 0.16, 0.35 * v, 'bandpass', 1800, 0.7); tone(o, 'triangle', 190, t, 0.08, 0.2 * v, { a: 0.002 }); },
+  hat: (o, t, v = 1) => noise(o, t, 0.04, 0.12 * v, 'highpass', 8000),
+  clap: (o, t, v = 1) => [0, 0.012, 0.024].forEach((d) => noise(o, t + d, 0.09, 0.32 * v, 'bandpass', 1400, 1.2)),
+  stomp: (o, t, v = 1) => { tone(o, 'sine', 90, t, 0.25, 0.7 * v, { glide: 40, a: 0.003 }); noise(o, t, 0.08, 0.2 * v, 'lowpass', 400); },
+  djembe: (o, t, kind = 'tone', v = 1) => {
+    if (kind === 'bass') tone(o, 'sine', 80, t, 0.3, 0.6 * v, { glide: 55, a: 0.003 });
+    else if (kind === 'slap') { noise(o, t, 0.08, 0.4 * v, 'bandpass', 3000, 1); tone(o, 'triangle', 420, t, 0.06, 0.2 * v, { a: 0.002 }); }
+    else { tone(o, 'sine', 300, t, 0.16, 0.4 * v, { glide: 260, a: 0.003 }); noise(o, t, 0.03, 0.12 * v, 'bandpass', 1500); }
+  },
+  dunun: (o, t, f = 95, v = 1) => { tone(o, 'sine', f, t, 0.35, 0.55 * v, { glide: f * 0.8, a: 0.003 }); noise(o, t, 0.02, 0.15 * v, 'highpass', 2500); },
+  talk: (o, t, f0, f1, dur = 0.35, v = 1) => { tone(o, 'triangle', f0, t, dur, 0.45 * v, { glide: f1, a: 0.005, filter: { type: 'lowpass', f: 900 } }); noise(o, t, 0.03, 0.15 * v, 'bandpass', 1200); },
+  castanet: (o, t, v = 1) => noise(o, t, 0.03, 0.3 * v, 'bandpass', 4200, 3),
+  wood: (o, t, v = 1) => tone(o, 'sine', 1150, t, 0.05, 0.3 * v, { a: 0.001 }),
+  conch: (o, t, f = 196, dur = 1.6) => { tone(o, 'sawtooth', f, t, dur, 0.18, { a: 0.25, vib: 0.01, vibRate: 4, filter: { type: 'lowpass', f: 700 } }); tone(o, 'sine', f, t, dur, 0.2, { a: 0.25 }); },
+  accordion: (o, t, f, dur = 0.4) => { [1, 1.006].forEach((d) => tone(o, 'sawtooth', f * d, t, dur, 0.06, { a: 0.03, vib: 0.004, vibRate: 6, filter: { type: 'lowpass', f: 2600 } })); tone(o, 'square', f / 2, t, dur, 0.03, { a: 0.03, filter: { type: 'lowpass', f: 1200 } }); },
+  bagpipeDrone: (o, t, f, dur) => { [f / 2, f / 4].forEach((d) => tone(o, 'sawtooth', d, t, dur, 0.05, { a: 0.2, filter: { type: 'lowpass', f: 1500 } })); },
+  bagpipe: (o, t, f, dur = 0.4) => tone(o, 'sawtooth', f, t, dur, 0.09, { a: 0.02, filter: { type: 'bandpass', f: 1600 }, q: 0.8 }),
+  whistle: (o, t, f, dur = 0.35) => { tone(o, 'sine', f, t, dur, 0.18, { a: 0.03, vib: 0.006, vibRate: 5.5 }); noise(o, t, dur * 0.8, 0.02, 'bandpass', f * 2, 2); },
+  mbira: (o, t, f) => { tone(o, 'sine', f, t, 0.9, 0.3, { a: 0.003 }); tone(o, 'sine', f * 3.1, t, 0.15, 0.06, { a: 0.002 }); },
+  bass: (o, t, f, dur = 0.25) => tone(o, 'square', f, t, dur, 0.18, { a: 0.005, filter: { type: 'lowpass', f: 450 } }),
+  guitar: (o, t, f, dur = 0.3) => {
+    const c = actx, ws = c.createWaveShaper(), lp = c.createBiquadFilter(), g = c.createGain();
+    ws.curve = distCurve; lp.type = 'lowpass'; lp.frequency.value = 2600; g.gain.value = 0.11;
+    ws.connect(lp).connect(g).connect(o);
+    [1, 1.5, 2].forEach((m) => tone(ws, 'sawtooth', f * m, t, dur, 0.3, { a: 0.004 }));
+  },
+  vocal: (o, t, f, dur = 0.4) => {
+    const c = actx, src = c.createOscillator(), g = c.createGain(), lfo = c.createOscillator(), lg = c.createGain();
+    src.type = 'sawtooth'; src.frequency.value = f; lfo.frequency.value = 5.2; lg.gain.value = f * 0.012; lfo.connect(lg).connect(src.frequency);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.16, t + 0.05); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    [[750, 6, 1], [1200, 8, 0.5]].forEach(([ff, q, lv]) => { const bp = c.createBiquadFilter(), bg = c.createGain(); bp.type = 'bandpass'; bp.frequency.value = ff; bp.Q.value = q; bg.gain.value = lv; src.connect(bp).connect(bg).connect(g); });
+    g.connect(o); src.start(t); lfo.start(t); src.stop(t + dur + 0.05); lfo.stop(t + dur + 0.05);
+  },
+  pluck: (o, t, f, dur = 0.5) => tone(o, 'triangle', f, t, dur, 0.28, { a: 0.003 }),
+  zheng: (o, t, f) => { tone(o, 'triangle', f, t, 0.9, 0.25, { a: 0.003 }); tone(o, 'sine', f * 2, t, 0.3, 0.06, { a: 0.003 }); },
+  koto: (o, t, f) => { tone(o, 'sawtooth', f, t, 0.8, 0.12, { a: 0.003, filter: { type: 'lowpass', f: 1800 } }); tone(o, 'sine', f, t, 0.8, 0.12, { a: 0.003 }); },
+  sanshin: (o, t, f) => { tone(o, 'square', f, t, 0.45, 0.1, { a: 0.003, filter: { type: 'bandpass', f: f * 3 }, q: 0.7 }); noise(o, t, 0.03, 0.1, 'highpass', 3000); },
+  dizi: (o, t, f, dur = 0.45) => { tone(o, 'sine', f, t, dur, 0.2, { a: 0.03, vib: 0.008 }); tone(o, 'square', f * 2, t, dur, 0.015, { a: 0.03, filter: { type: 'bandpass', f: f * 4 }, q: 4 }); noise(o, t, dur * 0.6, 0.02, 'bandpass', f * 3, 3); },
+  suona: (o, t, f, dur = 0.4) => tone(o, 'square', f, t, dur, 0.12, { a: 0.02, vib: 0.01, filter: { type: 'bandpass', f: 1500 }, q: 1.2 }),
+  erhu: (o, t, f, dur = 0.6) => tone(o, 'sawtooth', f, t, dur, 0.12, { a: 0.12, vib: 0.012, vibRate: 5.5, filter: { type: 'lowpass', f: 2200 } }),
+  pipa: (o, t, f) => { tone(o, 'sawtooth', f, t, 0.35, 0.12, { a: 0.002, filter: { type: 'bandpass', f: f * 2.5 }, q: 0.8 }); tone(o, 'triangle', f, t, 0.4, 0.15, { a: 0.002 }); },
+  guqin: (o, t, f) => { tone(o, 'triangle', f, t, 1.6, 0.25, { a: 0.004 }); tone(o, 'sine', f * 2, t, 0.6, 0.05, { a: 0.004 }); },
+  gong: (o, t, f = 110, dur = 2.5) => [1, 1.48, 2.1, 2.72].forEach((m, i) => tone(o, 'sine', f * m, t, dur / (1 + i * 0.4), 0.16 / (1 + i), { a: 0.01 })),
+  metallo: (o, t, f) => { tone(o, 'sine', f, t, 1.1, 0.22, { a: 0.002 }); tone(o, 'sine', f * 2.76, t, 0.3, 0.05, { a: 0.002 }); },
+  pad: (o, t, f, dur) => [1, 1.004].forEach((d) => tone(o, 'triangle', f * d, t, dur, 0.035, { a: 0.3 }))
+};
+// 播一串音符：notes = [[樂器, 拍, 時值(拍), midi], ...]
+function playSeq(notes, bpm = 100, out = null) {
+  const c = ac(), t0 = c.currentTime + 0.08, sp = 60 / bpm, o = out || instBus;
+  notes.forEach(([inst, at, dur, m]) => {
+    const t = t0 + at * sp, d = Math.max(0.08, dur * sp);
+    const fn = INST[inst];
+    if (m === undefined) fn(o, t); else fn(o, t, hz(m), d);
+  });
+  return t0;
+}
+const sfx = {
+  click: () => { if (!audioPref.sfx) return; ac(); tone(sfxBus, 'triangle', 880, actx.currentTime, 0.05, 0.06); },
+  ok: () => { if (!audioPref.sfx) return; ac(); const t = actx.currentTime; tone(sfxBus, 'sine', 660, t, 0.1, 0.12); tone(sfxBus, 'sine', 990, t + 0.09, 0.16, 0.12); },
+  bad: () => { if (!audioPref.sfx) return; ac(); tone(sfxBus, 'square', 200, actx.currentTime, 0.2, 0.05); },
+  stamp: () => { if (!audioPref.sfx) return; ac(); const t = actx.currentTime; tone(sfxBus, 'square', 140, t, 0.12, 0.12); tone(sfxBus, 'triangle', 523, t + 0.12, 0.15, 0.1); tone(sfxBus, 'triangle', 784, t + 0.22, 0.2, 0.1); }
+};
+let lastHorn = 0;
+function horn() {
+  if (!audioPref.sfx || performance.now() - lastHorn < 350) return;
+  lastHorn = performance.now(); ac();
+  // 巡演巴士的喇叭：兩個音的和弦
+  const t = actx.currentTime;
+  [330, 415].forEach((f) => tone(sfxBus, 'square', f, t, 0.3, 0.08, { a: 0.01, filter: { type: 'lowpass', f: 1800 } }));
+}
+function saveAudioPref() { try { localStorage.setItem(AUDIO_KEY, JSON.stringify(audioPref)); } catch (e) { /* 忽略 */ } }
+
+// ------------------------------------------------------------
+// 背景音樂：音樂節的原創輕快曲（進站、搖滾舞臺附近、演唱會時自動變小聲或停）
+// ------------------------------------------------------------
+const bgm = {
+  on: false, timer: null, step: 0, next: 0, level: 0.5,
+  chords: [[57, 60, 64], [53, 57, 60], [48, 52, 55], [55, 59, 62]],   // Am F C G
+  bassN: [45, 41, 48, 43],
+  mel: [76, null, 74, 72, null, 69, 72, null, 74, null, 76, 79, null, 76, 74, null],
+  start() {
+    if (this.on || !audioPref.music) return;
+    this.on = true; ac();
+    if (M.music) { this.file = this.file || new Audio(M.music); this.file.loop = true; this.file.volume = 0.35; this.file.play().catch(() => this.synth()); return; }
+    this.synth();
+  },
+  synth() {
+    this.step = 0; this.next = actx.currentTime + 0.1;
+    clearInterval(this.timer);
+    this.timer = setInterval(() => {
+      const dt = 60 / 104 / 4;
+      if (this.next < actx.currentTime - 0.2) this.next = actx.currentTime + 0.05;
+      while (this.next < actx.currentTime + 0.15) {
+        const s = this.step, bar = Math.floor(s / 16) % 4, i = s % 16, t = this.next;
+        if (i === 0) this.chords[bar].forEach((n) => INST.pad(musicBus, t, hz(n), dt * 16));
+        if (i % 4 === 0) INST.bass(musicBus, t, hz(this.bassN[bar]), dt * 3);
+        if (i % 8 === 0) INST.kick(musicBus, t, 0.6);
+        if (i % 8 === 4) INST.clap(musicBus, t, 0.4);
+        if (i % 2 === 1) INST.hat(musicBus, t, 0.5);
+        const n = this.mel[(i + bar * 3) % 16];
+        if (n && bar % 2 === 1) INST.mbira(musicBus, t, hz(n));
+        this.next += dt; this.step++;
+      }
+    }, 25);
+  },
+  stop() { this.on = false; clearInterval(this.timer); if (this.file) this.file.pause(); },
+  setLevel(v) { this.level = v; if (this.file) this.file.volume = 0.7 * v; if (musicBus) musicBus.gain.setTargetAtTime(audioPref.music ? v : 0, actx.currentTime, 0.4); }
+};
+
+// ============================================================
+// 進度（存在這台電腦的瀏覽器裡）
+// ============================================================
+const SAVE_KEY = 'musicIsland.v1';
+const fresh = () => ({
+  introSeen: false, ended: false,
+  world: { africa: false, europe: false, latin: false, oceania: false, quiz: false },
+  rock: { placed: { drums: false, bass: false, guitar: false, vocal: false }, stomp: false, quiz: false },
+  asia: { scale: false, family: false, quiz: false },
+  pros: { delivered: {}, dream: null, quiz: false }
+});
+let prog = fresh();
+try { const s = JSON.parse(localStorage.getItem(SAVE_KEY)); if (s) prog = Object.assign(fresh(), s, { world: { ...fresh().world, ...s.world }, rock: { ...fresh().rock, ...s.rock, placed: { ...fresh().rock.placed, ...(s.rock || {}).placed } }, asia: { ...fresh().asia, ...s.asia }, pros: { ...fresh().pros, ...s.pros } }); } catch (e) { /* 重新開始 */ }
+function save() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(prog)); } catch (e) { /* 忽略 */ } }
+const chapterDone = {
+  world: () => ['africa', 'europe', 'latin', 'oceania', 'quiz'].every((k) => prog.world[k]),
+  rock: () => Object.values(prog.rock.placed).every(Boolean) && prog.rock.stomp && prog.rock.quiz,
+  asia: () => prog.asia.scale && prog.asia.family && prog.asia.quiz,
+  pros: () => M.pros.jobs.every((j) => prog.pros.delivered[j.name]) && prog.pros.quiz
+};
+const chapterCount = {
+  world: () => ['africa', 'europe', 'latin', 'oceania', 'quiz'].filter((k) => prog.world[k]).length + '/5',
+  rock: () => (Object.values(prog.rock.placed).filter(Boolean).length + +prog.rock.stomp + +prog.rock.quiz) + '/6',
+  asia: () => (+prog.asia.scale + +prog.asia.family + +prog.asia.quiz) + '/3',
+  pros: () => (M.pros.jobs.filter((j) => prog.pros.delivered[j.name]).length + +prog.pros.quiz) + '/' + (M.pros.jobs.length + 1)
+};
+const allDone = () => Object.keys(chapterDone).every((k) => chapterDone[k]());
+
+// ============================================================
+// 開幕大舞臺（吉他的音孔）
+// ============================================================
+const stageLights = [];
+{
+  const ring = new THREE.Mesh(new THREE.RingGeometry(MAIN.r, MAIN.r + 3, 64), mat('#3f2716'));
+  ring.rotation.x = -Math.PI / 2; ring.position.set(MAIN.x, 0.03, MAIN.z); scene.add(ring);
+  for (let k = 0; k < 3; k++) {
+    const r = new THREE.Mesh(new THREE.RingGeometry(MAIN.r + 0.6 + k * 0.8, MAIN.r + 0.9 + k * 0.8, 64), mat(k % 2 ? '#d97706' : '#fef3c7'));
+    r.rotation.x = -Math.PI / 2; r.position.set(MAIN.x, 0.035, MAIN.z); scene.add(r);
+  }
+  const floor = new THREE.Mesh(new THREE.CircleGeometry(MAIN.r, 64), mat('#1e1b4b'));
+  floor.rotation.x = -Math.PI / 2; floor.position.set(MAIN.x, 0.03, MAIN.z); floor.receiveShadow = true; scene.add(floor);
+  // 背景桁架與燈
+  const back = box(20, 0.6, 0.6, '#475569'); back.position.set(MAIN.x, 7, MAIN.z - MAIN.r - 1); scene.add(back);
+  [-10, 10].forEach((dx) => { const p = box(0.6, 7, 0.6, '#475569'); p.position.set(MAIN.x + dx, 3.5, MAIN.z - MAIN.r - 1); scene.add(p); staticBox(MAIN.x + dx, 3.5, MAIN.z - MAIN.r - 1, 0.4, 3.5, 0.4); });
+  const colors = ['#f43f5e', '#f59e0b', '#22c55e', '#3b82f6', '#a855f7'];
+  colors.forEach((c, i) => {
+    const m = new THREE.MeshStandardMaterial({ color: c, emissive: c, emissiveIntensity: 0.3 });
+    const lamp = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.6, 0.9, 12), m);
+    lamp.position.set(MAIN.x - 8 + i * 4, 6.3, MAIN.z - MAIN.r - 1); scene.add(lamp);
+    stageLights.push(m);
+  });
+  // 兩側大喇叭
+  [-1, 1].forEach((s) => {
+    const sp = box(2.4, 4, 2.4, '#111827'); sp.position.set(MAIN.x + s * 13.5, 2, MAIN.z - 7); scene.add(sp);
+    [1.2, 2.8].forEach((y) => { const cone = cyl(0.8, 0.8, 0.1, '#374151', 20); cone.rotation.x = Math.PI / 2; cone.position.set(MAIN.x + s * 13.5, y, MAIN.z - 5.75); scene.add(cone); });
+    staticBox(MAIN.x + s * 13.5, 2, MAIN.z - 7, 1.2, 2, 1.2);
+  });
+  groundText('開幕大舞臺', MAIN.x, MAIN.z + 5.5, 2.4, { color: '#fde68a' });
+  groundText('環球音樂節', MAIN.x, MAIN.z - 2, 3.2, { color: '#fef3c7' });
+}
+
+// ============================================================
+// 開幕演唱會的舞臺表演：音樂每加一種聲音，對應的樂手就從舞臺地板升上來，跟著節拍動；
+// 後方桁架的五盞彩燈射出看得到的光束，左右掃動、隨拍子閃。平常整組藏起來，只有演唱會（含重播）時出現。
+//   第 1 段 非洲鼓手 → 第 2 段 佛拉明哥舞者 → 第 3 段 搖滾樂團（鼓、貝斯、吉他、主唱）→ 第 4 段 箏
+// ============================================================
+const show = (() => {
+  const g = new THREE.Group(); g.visible = false; scene.add(g);
+  const SP = 60 / 112 / 2;                  // 八分音符幾秒（和 startFinale 的節奏一樣）
+  const flat = { flatShading: true };
+  const SKIN = ['#8d5524', '#c68642', '#e0ac69', '#f1c27d'];
+  // 低多邊形小人：腳（或裙子）、身體、頭、兩隻手臂（支點在肩膀才能擺動）。面向 +z（舞臺前方）
+  function person(shirt, skin, { pants = '#1f2937', dress = null, hair = '#1c1917' } = {}) {
+    const p = new THREE.Group();
+    if (dress) { const d = new THREE.Mesh(new THREE.ConeGeometry(0.8, 1.35, 7), mat(dress, flat)); d.position.y = 0.68; d.castShadow = true; p.add(d); }
+    else [-0.17, 0.17].forEach((x) => { const l = box(0.22, 0.8, 0.26, pants); l.position.set(x, 0.4, 0); p.add(l); });
+    const body = box(0.62, 0.8, 0.38, shirt); body.position.y = 1.2; p.add(body);
+    const head = new THREE.Mesh(new THREE.IcosahedronGeometry(0.28, 0), mat(skin, flat)); head.position.y = 1.86; head.castShadow = true; p.add(head);
+    const hr = new THREE.Mesh(new THREE.IcosahedronGeometry(0.3, 0), mat(hair, flat)); hr.scale.set(1, 0.6, 1); hr.position.set(0, 1.98, -0.05); p.add(hr);
+    const arms = [-1, 1].map((sd) => {
+      const a = new THREE.Group(); a.position.set(sd * 0.42, 1.52, 0);
+      const m = box(0.18, 0.66, 0.2, shirt); m.position.y = -0.31; a.add(m);
+      const hand = new THREE.Mesh(new THREE.IcosahedronGeometry(0.11, 0), mat(skin, flat)); hand.position.y = -0.68; a.add(hand);
+      p.add(a); return a;
+    });
+    p.userData = { arms, head };
+    return p;
+  }
+  function guitar(color) {
+    const gt = new THREE.Group();
+    const b = box(0.62, 0.42, 0.12, color); gt.add(b);
+    const neck = box(0.95, 0.08, 0.06, '#78350f'); neck.position.x = -0.75; gt.add(neck);
+    gt.position.set(0.05, 1.08, 0.3); gt.rotation.z = -0.45;
+    return gt;
+  }
+  const acts = [];
+  // 演唱會鏡頭離舞臺很遠，樂手放大 1.6 倍才看得清楚
+  function add(sec, x, z, obj, anim) { obj.scale.setScalar(1.6); obj.position.set(x, -5, z); obj.visible = false; g.add(obj); acts.push({ sec, obj, anim }); }
+
+  // 第 1 段：非洲鼓手（金貝鼓）
+  {
+    const p = person('#f59e0b', SKIN[0], { pants: '#7c2d12' });
+    const drum = cyl(0.36, 0.24, 0.95, '#92400e', 10); drum.position.set(0, 0.48, 0.62); p.add(drum);
+    const top = cyl(0.37, 0.37, 0.05, '#fde68a', 10); top.position.set(0, 0.98, 0.62); p.add(top);
+    add(0, MAIN.x - 6, 1.5, p, (o, b) => {
+      const [l, r] = o.userData.arms, k = b * Math.PI;
+      l.rotation.x = -0.95 - 0.55 * Math.max(0, Math.sin(k)); r.rotation.x = -0.95 - 0.55 * Math.max(0, -Math.sin(k));
+    });
+  }
+  // 第 2 段：佛拉明哥舞者（舉手拍手、轉身）
+  {
+    const p = person('#b91c1c', SKIN[2], { dress: '#dc2626' });
+    add(1, MAIN.x + 6, 1.5, p, (o, b, t) => {
+      const [l, r] = o.userData.arms, clap = Math.max(0, Math.cos(b * Math.PI)) ** 6;
+      l.rotation.z = -2.45 - 0.55 * clap; r.rotation.z = 2.45 + 0.55 * clap;
+      o.rotation.y = Math.sin(t * 1.7) * 0.9;
+    });
+  }
+  // 第 3 段：搖滾樂團
+  {
+    const p = person('#111827', SKIN[3], { pants: '#111827' });      // 鼓手
+    const kit = new THREE.Group();
+    const kick = cyl(0.55, 0.55, 0.45, '#dc2626', 16); kick.rotation.x = Math.PI / 2; kick.position.set(0, 0.55, 0.95); kit.add(kick);
+    [-0.55, 0.55].forEach((x) => { const tom = cyl(0.27, 0.27, 0.3, '#dc2626', 12); tom.position.set(x, 1.05, 0.72); kit.add(tom); });
+    const cym = [-1, 1].map((sd) => {
+      const st = cyl(0.03, 0.03, 1.5, '#9ca3af', 6); st.position.set(sd * 0.95, 0.75, 0.5); kit.add(st);
+      const c = cyl(0.42, 0.42, 0.03, '#facc15', 16, { metalness: 0.6, roughness: 0.3 }); c.position.set(sd * 0.95, 1.5, 0.5); kit.add(c); return c;
+    });
+    p.add(kit);
+    add(2, MAIN.x, -6.5, p, (o, b) => {
+      const [l, r] = o.userData.arms;
+      l.rotation.x = -0.9 - 0.5 * Math.abs(Math.sin(b * Math.PI)); r.rotation.x = -0.9 - 0.5 * Math.abs(Math.cos(b * Math.PI));
+      cym.forEach((c, i) => (c.rotation.x = 0.15 * Math.sin(b * Math.PI + i)));
+    });
+  }
+  [[-4.5, '#2563eb', '#0f172a', 0.5], [4.5, '#16a34a', '#f97316', 1]].forEach(([dx, shirt, gcol, speed]) => {      // 貝斯手、吉他手
+    const p = person(shirt, dx < 0 ? SKIN[1] : SKIN[2]);
+    p.add(guitar(gcol));
+    add(2, MAIN.x + dx, -4, p, (o, b) => {
+      const [l, r] = o.userData.arms;
+      l.rotation.x = -1.0; l.rotation.z = -0.7;                                 // 左手握琴頸
+      r.rotation.x = -0.55 - 0.3 * Math.sin(b * Math.PI * speed * 2);          // 右手刷弦
+      o.rotation.y = (dx < 0 ? 0.25 : -0.25) + 0.12 * Math.sin(b * Math.PI / 2);
+    });
+  });
+  {
+    const p = person('#7c3aed', SKIN[1], { hair: '#facc15' });               // 主唱
+    const stand = cyl(0.03, 0.03, 1.6, '#9ca3af', 6); stand.position.set(0, 0.8, 0.5); p.add(stand);
+    const mic = new THREE.Mesh(new THREE.IcosahedronGeometry(0.09, 0), mat('#111827')); mic.position.set(0, 1.66, 0.45); p.add(mic);
+    add(2, MAIN.x, -1.8, p, (o, b, t) => {
+      const [l, r] = o.userData.arms;
+      r.rotation.x = -1.35;                                                     // 右手握麥克風
+      l.rotation.z = -0.4 - 0.9 * Math.abs(Math.sin(b * Math.PI / 4));        // 左手跟著揮
+      o.userData.head.rotation.x = 0.15 * Math.sin(b * Math.PI);
+    });
+  }
+  // 第 4 段：箏（亞洲音樂街的五聲旋律）
+  {
+    const p = person('#0d9488', SKIN[3], { pants: '#134e4a' });
+    const zheng = box(2.3, 0.12, 0.55, '#a16207'); zheng.position.set(0, 0.95, 0.75); zheng.rotation.y = 0.12; p.add(zheng);
+    for (let k = 0; k < 7; k++) { const str = box(2.1, 0.015, 0.015, '#fef3c7'); str.position.set(0, 1.02, 0.55 + k * 0.06); str.rotation.y = 0.12; str.castShadow = false; p.add(str); }
+    [-0.9, 0.9].forEach((x) => { const leg = box(0.12, 0.9, 0.4, '#78350f'); leg.position.set(x, 0.45, 0.75); p.add(leg); });
+    add(3, MAIN.x, 3.2, p, (o, b) => {
+      const [l, r] = o.userData.arms;
+      l.rotation.x = r.rotation.x = -1.15;
+      l.rotation.z = -0.1 + 0.3 * Math.sin(b * Math.PI / 2); r.rotation.z = 0.1 + 0.3 * Math.sin(b * Math.PI / 2 + 1.5);
+    });
+  }
+
+  // 光束：從桁架彩燈往舞臺照的半透明光錐，越遠越淡（alphaMap 漸層），疊加混色看起來會發光
+  const grad = document.createElement('canvas'); grad.width = 2; grad.height = 64;
+  { const x = grad.getContext('2d'), gr = x.createLinearGradient(0, 0, 0, 64); gr.addColorStop(0, '#fff'); gr.addColorStop(1, '#000'); x.fillStyle = gr; x.fillRect(0, 0, 2, 64); }
+  const alphaMap = new THREE.CanvasTexture(grad);
+  const coneGeo = new THREE.ConeGeometry(2.4, 22, 24, 1, true).translate(0, -11, 0);   // 尖端在原點，往 -y 延伸
+  const beams = ['#f43f5e', '#f59e0b', '#22c55e', '#3b82f6', '#a855f7'].map((c, i) => {
+    const m = new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: 0, alphaMap, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, fog: false });
+    const piv = new THREE.Group(); piv.rotation.order = 'YXZ';
+    piv.position.set(MAIN.x - 8 + i * 4, 6.0, MAIN.z - MAIN.r - 1);
+    const cone = new THREE.Mesh(coneGeo, m); cone.renderOrder = 5; piv.add(cone); g.add(piv);
+    return { piv, m, i };
+  });
+  // 每一段亮哪幾道光：第 1 段兩道、第 2 段四道、之後全部
+  const LIT = [[1, 3], [0, 1, 3, 4], [0, 1, 2, 3, 4], [0, 1, 2, 3, 4]];
+
+  let t0 = 0;
+  const easeOutBack = (k) => 1 + 2.7 * (k - 1) ** 3 + 1.7 * (k - 1) ** 2;
+  function start() {
+    t0 = performance.now() / 1000 + 0.3;      // 音樂在 0.3 秒後開始
+    g.visible = true;
+    acts.forEach((a) => { a.obj.visible = false; a.obj.position.y = -5; });
+  }
+  function stop() { g.visible = false; }
+  function update() {
+    if (!g.visible) return;
+    const t = performance.now() / 1000, el = t - t0;
+    const st = Math.max(0, el / SP);                 // 第幾個八分音符
+    const b = st / 2;                                 // 第幾拍
+    const sec = Math.min(3, Math.floor(st / 32));
+    acts.forEach((a) => {
+      const s0 = a.sec * 32 * SP;
+      if (el < s0) return;
+      const k = Math.min(1, (el - s0) / 0.7);
+      a.obj.visible = true;
+      a.obj.position.y = -5 * (1 - easeOutBack(k)) + 0.1 * Math.abs(Math.sin(b * Math.PI));   // 升上來，之後跟著拍子上下
+      a.anim(a.obj, b, t);
+    });
+    const pulse = Math.exp(-(b % 1) * 5), end = st > 124 ? 1 : 0;        // 每一拍閃一下；最後的鑼聲全部大亮
+    beams.forEach(({ piv, m, i }) => {
+      const on = el >= 0 && LIT[sec].includes(i);
+      const want = on ? 0.16 + 0.3 * pulse + 0.3 * end : 0;
+      m.opacity += (want - m.opacity) * 0.25;
+      const sp = 0.6 + sec * 0.35;
+      piv.rotation.y = Math.sin(t * sp + i * 1.3) * 0.65;
+      piv.rotation.x = -(1.05 + 0.18 * Math.sin(t * sp * 0.7 + i));
+    });
+  }
+  return { start, stop, update };
+})();
+// 停車場與往各區的地面指標
+{
+  const lot = box(10, 0.04, 7, '#cbd5e1'); lot.position.set(SPAWN.x, 0.02, SPAWN.z); lot.castShadow = false; scene.add(lot);
+  groundText('巡演巴士停車場', SPAWN.x, SPAWN.z + 4.8, 1.3, { color: '#334155' });
+  groundText('← 世界舞臺', SPAWN.x - 10, SPAWN.z - 2, 1.5, { color: CH_COLOR.world, bg: 'rgba(255,255,255,.8)' });
+  groundText('搖滾車庫 ↘', SPAWN.x + 12, SPAWN.z + 8, 1.5, { color: CH_COLOR.rock, bg: 'rgba(255,255,255,.8)' });
+  groundText('音樂職人城 ↗', SPAWN.x + 8, SPAWN.z - 20, 1.5, { color: CH_COLOR.pros, bg: 'rgba(255,255,255,.8)' });
+  groundText('琴鍵大道 →', 44, 4, 1.6, { color: CH_COLOR.asia, bg: 'rgba(255,255,255,.8)' });
+}
+
+// ============================================================
+// 第一章　世界舞臺：地球儀廣場＋四個地區舞臺
+// ============================================================
+{
+  const ring = new THREE.Mesh(new THREE.RingGeometry(22, 26, 64), mat('#d6c7a8'));
+  ring.rotation.x = -Math.PI / 2; ring.position.set(GLOBE.x, 0.025, GLOBE.z); ring.receiveShadow = true; scene.add(ring);
+  const base = cyl(2.6, 3, 1.2, '#78716c', 20); base.position.set(GLOBE.x, 0.6, GLOBE.z); scene.add(base);
+  const globe = new THREE.Mesh(new THREE.SphereGeometry(3.2, 28, 20), new THREE.MeshStandardMaterial({ color: '#3b82f6', roughness: 0.5 }));
+  globe.position.set(GLOBE.x, 4.6, GLOBE.z); globe.castShadow = true; scene.add(globe);
+  [[0.4, 0.9, 1.5], [-0.8, 0.3, 1.3], [0.9, -0.5, 1.1], [-0.2, -1.0, 1.0]].forEach(([a, b, s]) => {
+    const land = new THREE.Mesh(new THREE.IcosahedronGeometry(s, 0), mat('#22c55e', { flatShading: true }));
+    land.position.set(GLOBE.x + Math.cos(a) * 2.6 * Math.cos(b), 4.6 + Math.sin(b) * 2.6, GLOBE.z + Math.sin(a) * 2.6 * Math.cos(b));
+    land.scale.set(1, 0.5, 1); land.lookAt(globe.position); scene.add(land);
+  });
+  const orbit = new THREE.Mesh(new THREE.TorusGeometry(4.2, 0.12, 8, 48), mat('#fbbf24', { metalness: 0.5 }));
+  orbit.position.copy(globe.position); orbit.rotation.x = 1.2; scene.add(orbit);
+  staticBox(GLOBE.x, 3, GLOBE.z, 3, 3, 3);
+  groundText('世界舞臺', GLOBE.x, GLOBE.z + 9, 2.6, { color: CH_COLOR.world });
+}
+// 地區舞臺：小舞臺＋地區名稱的布條＋代表樂器
+const REGION_PROPS = {
+  africa(g) {   // 金貝鼓、敦敦鼓、說話鼓
+    const dj = cyl(0.9, 0.45, 1.8, '#92400e', 14); dj.position.set(-2.5, 1.1, 0); g.add(dj);
+    const djTop = cyl(0.95, 0.95, 0.1, '#fef3c7', 14); djTop.position.set(-2.5, 2.05, 0); g.add(djTop);
+    const du = cyl(0.8, 0.8, 1.6, '#b45309', 14); du.rotation.z = Math.PI / 2; du.position.set(0, 1.1, 0); g.add(du);
+    const td1 = cyl(0.6, 0.3, 0.8, '#a16207', 12); td1.position.set(2.5, 1.5, 0); g.add(td1);
+    const td2 = cyl(0.3, 0.6, 0.8, '#a16207', 12); td2.position.set(2.5, 0.7, 0); g.add(td2);
+  },
+  europe(g) {   // 手風琴、風笛
+    const acc = box(1.8, 1.4, 1, '#dc2626'); acc.position.set(-1.8, 1.2, 0); g.add(acc);
+    for (let k = 0; k < 5; k++) { const f = box(0.08, 1.3, 1.05, '#fef2f2'); f.position.set(-2.4 + k * 0.3, 1.2, 0); g.add(f); }
+    const bag = new THREE.Mesh(new THREE.SphereGeometry(0.8, 14, 10), mat('#166534')); bag.position.set(2, 1.3, 0); g.add(bag);
+    [[-0.3, 0.6], [0.2, 0.9], [0.6, 1.2]].forEach(([dx, h]) => { const p = cyl(0.08, 0.08, h * 2, '#1f2937', 6); p.position.set(2 + dx, 2.2 + h * 0.4, 0); g.add(p); });
+  },
+  latin(g) {    // 班多鈕手風琴與鋼琴
+    const piano = box(3, 1.2, 1.4, '#111827'); piano.position.set(-1.4, 0.9, 0); g.add(piano);
+    const keysW = box(2.8, 0.1, 0.4, '#f8fafc'); keysW.position.set(-1.4, 1.55, 0.55); g.add(keysW);
+    const ban = box(1.1, 1.1, 1.1, '#7c3aed'); ban.position.set(2.2, 1.0, 0); g.add(ban);
+  },
+  oceania(g) {  // 海螺與浪
+    const shell = new THREE.Mesh(new THREE.ConeGeometry(0.9, 2.4, 10), mat('#fecaca', { flatShading: true })); shell.rotation.z = Math.PI / 2.4; shell.position.set(-1, 1.2, 0); g.add(shell);
+    for (let k = 0; k < 3; k++) { const w = box(1.6, 0.4, 0.5, '#38bdf8'); w.position.set(1 + k * 0.6, 0.6 + k * 0.4, -0.3 + k * 0.2); w.rotation.z = 0.3; g.add(w); }
+  }
+};
+// ============================================================
+// 站點：發光圓圈＋印在地上的站名
+// ============================================================
+const pads = [];
+STATIONS.forEach((st) => {
+  const color = CH_COLOR[st.ch];
+  const ringMat = new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.25 });
+  const ring = new THREE.Mesh(new THREE.RingGeometry(2.7, 3.3, 48), ringMat);
+  ring.rotation.x = -Math.PI / 2; ring.position.set(st.x, 0.05, st.z); scene.add(ring);
+  const disc = new THREE.Mesh(new THREE.CircleGeometry(2.7, 48), new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.18 }));
+  disc.rotation.x = -Math.PI / 2; disc.position.set(st.x, 0.045, st.z); scene.add(disc);
+  glowMats.push(ringMat);
+  // 站名印在圓圈前方的地上；視聽室的圓圈在棚子裡，站名改印在棚子外面，不會壓在柱子底下
+  groundText(st.name, st.kind === 'asiahall' ? 170 : st.x, st.kind === 'asiahall' ? 7.8 : st.z + 4.6, 1.3, { color, bg: 'rgba(255,253,247,.85)' });
+  if (st.kind === 'region') {
+    const g = new THREE.Group();
+    const stage = box(9, 0.5, 5, '#44403c'); stage.position.set(0, 0.25, 0); g.add(stage);
+    const back = box(9, 4, 0.3, '#292524'); back.position.set(0, 2.5, -2.4); g.add(back);
+    REGION_PROPS[st.id](g);
+    g.position.set(st.x, 0, st.z - 7.5);
+    scene.add(g);
+    staticBox(st.x, 1.5, st.z - 7.5, 4.6, 1.5, 2.6);
+    const region = M.world.find((w) => w.id === st.id);
+    banner(region.region, st.x, 3.3, st.z - 9.7, 1.8, { color: '#fff', bg: region.color });
+  }
+  pads.push({ st, ring, disc, ringMat });
+});
+
+// ============================================================
+// 第二章　搖滾車庫：車庫、搖滾舞臺、四個樂器箱
+// ============================================================
+{
+  const g = new THREE.Group();
+  const walls = box(10, 5, 7, '#9ca3af'); walls.position.y = 2.5; g.add(walls);
+  const door = box(6, 3.6, 0.1, '#e5e7eb'); door.position.set(0, 1.8, 3.52); g.add(door);
+  for (let k = 0; k < 6; k++) { const s = box(6, 0.06, 0.12, '#9ca3af'); s.position.set(0, 0.4 + k * 0.55, 3.6); g.add(s); }
+  const roof = box(10.6, 0.5, 7.6, '#7f1d1d'); roof.position.y = 5.2; g.add(roof);
+  g.position.set(24, 0, 31); scene.add(g);
+  staticBox(24, 2.5, 31, 5, 2.5, 3.5);
+  banner('搖滾車庫', 24, 4, 34.6, 1.5, { color: '#fff', bg: '#dc2626' });
+  // 搖滾舞臺：地上畫出的範圍＋後方的桁架與音箱
+  const fl = box(ROCK.hw * 2, 0.04, ROCK.hd * 2, '#1f2937'); fl.position.set(ROCK.x, 0.03, ROCK.z); fl.castShadow = false; scene.add(fl);
+  const edge = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(ROCK.hw * 2, 0.05, ROCK.hd * 2)), new THREE.LineBasicMaterial({ color: '#f87171' }));
+  edge.position.set(ROCK.x, 0.06, ROCK.z); scene.add(edge);
+  groundText('搖滾舞臺：把樂器推進來', ROCK.x, ROCK.z, 1.2, { color: '#fca5a5' });
+  const truss = box(ROCK.hw * 2, 0.4, 0.4, '#6b7280'); truss.position.set(ROCK.x, 5, ROCK.z - ROCK.hd - 0.6); scene.add(truss);
+  [-1, 1].forEach((s) => {
+    const p = box(0.4, 5, 0.4, '#6b7280'); p.position.set(ROCK.x + s * ROCK.hw, 2.5, ROCK.z - ROCK.hd - 0.6); scene.add(p);
+    staticBox(ROCK.x + s * ROCK.hw, 2.5, ROCK.z - ROCK.hd - 0.6, 0.3, 2.5, 0.3);
+    const amp = box(1.6, 2, 1, '#111827'); amp.position.set(ROCK.x + s * (ROCK.hw - 1.3), 1, ROCK.z - ROCK.hd - 1.6); scene.add(amp);
+  });
+  staticBox(ROCK.x, 1, ROCK.z - ROCK.hd - 1.6, ROCK.hw, 1, 0.5);
+}
+const crates = [];
+{
+  const spots = { drums: [22, 20], bass: [32, 22], guitar: [14, 40], vocal: [-12, 30] };
+  M.rock.instruments.forEach((ins) => {
+    const s = 1.6, { tex } = textTexture(ins.name, { size: 64, color: '#fff', bg: '#dc2626', pad: 30 });
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(s, s, s), new THREE.MeshStandardMaterial({ map: tex, roughness: 0.8 }));
+    mesh.castShadow = true; scene.add(mesh);
+    const body = new CANNON.Body({ mass: 8, shape: new CANNON.Box(new CANNON.Vec3(s / 2, s / 2, s / 2)), linearDamping: 0.35, angularDamping: 0.5 });
+    const [x, z] = spots[ins.id];
+    body.position.set(x, s / 2 + 0.05, z);
+    if (prog.rock.placed[ins.id]) body.position.set(ROCK.x - 4.5 + crates.length * 3, s / 2 + 0.05, ROCK.z + 1);   // 已經放好的直接站在舞臺上
+    world.addBody(body);
+    crates.push({ ins, mesh, body });
+  });
+}
+// 搖滾樂團的伴奏（推上舞臺的樂器才會響；巴士在附近時才聽得到）
+const band = {
+  on: false, timer: null, step: 0, next: 0, vol: null,
+  chords: [40, 36, 38, 40],      // E C D E（強力和弦的根音）
+  vocalMel: [64, null, 64, 67, null, 69, 67, null, 64, null, 62, 64, null, null, null, null],
+  start() {
+    if (this.on) return;
+    this.on = true; ac();
+    if (!this.vol) { this.vol = actx.createGain(); this.vol.gain.value = 0; this.vol.connect(instBus); }
+    this.step = 0; this.next = actx.currentTime + 0.1;
+    this.timer = setInterval(() => this.tick(), 25);
+  },
+  stop() { this.on = false; clearInterval(this.timer); },
+  setVol(v) { if (this.vol) this.vol.gain.setTargetAtTime(v, actx.currentTime, 0.3); },
+  tick() {
+    const dt = 60 / 120 / 4, P = prog.rock.placed;
+    if (this.next < actx.currentTime - 0.2) this.next = actx.currentTime + 0.05;
+    while (this.next < actx.currentTime + 0.15) {
+      const s = this.step, bar = Math.floor(s / 16) % 4, i = s % 16, t = this.next, root = this.chords[bar], o = this.vol;
+      if (P.drums) { if (i % 8 === 0) INST.kick(o, t); if (i % 8 === 4) INST.snare(o, t); if (i % 2 === 0) INST.hat(o, t, 0.8); }
+      if (P.bass && i % 2 === 0) INST.bass(o, t, hz(root), dt * 1.8);
+      if (P.guitar && (i === 0 || i === 3 || i === 6 || i === 10 || i === 12)) INST.guitar(o, t, hz(root + 12), dt * 2.5);
+      if (P.vocal) { const n = this.vocalMel[(i + bar * 4) % 16]; if (n && bar !== 3) INST.vocal(o, t, hz(n), dt * 2.5); }
+      this.next += dt; this.step++;
+    }
+  }
+};
+
+// ============================================================
+// 第三章　亞洲音樂街：琴頸上的三條琴鍵大道
+// ============================================================
+const keyTiles = [];
+{
+  const segW = (KEYS.x1 - KEYS.x0) / KEYS.n;
+  LANES.forEach((ln, li) => {
+    for (let k = 0; k < KEYS.n; k++) {
+      const m = new THREE.MeshStandardMaterial({ color: k % 2 ? ln.color : '#fff7ed', emissive: ln.color, emissiveIntensity: 0, roughness: 0.6 });
+      const tile = new THREE.Mesh(new THREE.BoxGeometry(segW - 0.6, 0.05, 5.4), m);
+      tile.position.set(KEYS.x0 + segW * (k + 0.5), 0.05, ln.z); tile.receiveShadow = true; scene.add(tile);
+      keyTiles.push({ li, k, m });
+    }
+    const scale = M.asia.scales[li];
+    groundText(scale.name, KEYS.x0 - 4, ln.z, 1.6, { color: '#fff', bg: ln.color });
+  });
+  // 品絲（金屬條）
+  for (let k = 0; k <= KEYS.n; k++) {
+    const fret = box(0.35, 0.18, NECK.hw * 2, '#d4d4d8', { metalness: 0.7, roughness: 0.3 });
+    fret.position.set(KEYS.x0 + segW * k, 0.09, 0); fret.castShadow = false; scene.add(fret);
+  }
+  groundText('琴鍵大道：往右開音會變高', (KEYS.x0 + KEYS.x1) / 2, -NECK.hw + 1.4, 1.3, { color: '#fde68a' });
+  // 琴頭上的視聽室
+  const g = new THREE.Group();
+  const floor = box(12, 0.06, 10, '#fef3c7'); floor.position.y = 0.03; floor.castShadow = false; g.add(floor);
+  [[-5.5, -4.5], [5.5, -4.5], [-5.5, 4.5], [5.5, 4.5]].forEach(([dx, dz]) => { const p = cyl(0.3, 0.3, 4.5, '#b91c1c', 10); p.position.set(dx, 2.4, dz); g.add(p); });
+  const roof = new THREE.Mesh(new THREE.ConeGeometry(9, 2.6, 4), mat('#1e3a8a', { flatShading: true })); roof.rotation.y = Math.PI / 4; roof.scale.set(1, 1, 0.8); roof.position.y = 5.8; g.add(roof);
+  g.position.set(170, 0, 0); scene.add(g);
+  [[-5.5, -4.5], [5.5, -4.5], [-5.5, 4.5], [5.5, 4.5]].forEach(([dx, dz]) => staticBox(170 + dx, 2, dz, 0.4, 2, 0.4));
+  // 招牌釘在屋簷的正前方，整塊凸出屋頂邊緣（屋頂邊緣在 z≈5.1、y≈4.5），往後仰一點對著鏡頭
+  const sign = banner('亞洲音樂視聽室', 170, 4.55, 6.0, 1.3, { color: '#fff', bg: '#db2777' });
+  sign.rotation.x = -0.45;
+  const back = box(sign.geometry.parameters.width + 0.3, 1.6, 0.15, '#7f1d1d');      // 招牌後面的木框
+  back.position.set(170, 4.55, 5.9); back.rotation.x = -0.45; back.castShadow = false; scene.add(back);
+}
+
+// ============================================================
+// 第四章　音樂職人城：公車站與六棟工作場所
+// ============================================================
+{
+  const PLACE_STYLE = { office: '#0ea5e9', studio: '#334155', composer: '#a855f7', school: '#16a34a', clinic: '#f472b6' };
+  M.pros.places.forEach((pl) => {
+    if (pl.id === 'stage') return;   // 演唱會舞臺就是中央的開幕大舞臺
+    const P = PLACES[pl.id], color = PLACE_STYLE[pl.id];
+    const g = new THREE.Group();
+    const body = box(7, 4, 5, '#f8fafc'); body.position.y = 2; g.add(body);
+    const roof = box(7.6, 0.6, 5.6, color); roof.position.y = 4.3; g.add(roof);
+    const door = box(1.8, 2.6, 0.1, color); door.position.set(0, 1.3, 2.53); g.add(door);
+    g.position.set(P.x, 0, P.z - 6.5); scene.add(g);
+    staticBox(P.x, 2, P.z - 6.5, 3.5, 2, 2.5);
+    banner(pl.name, P.x, 3.3, P.z - 3.9, 1.1, { color: '#fff', bg: color });
+    const pad = new THREE.Mesh(new THREE.RingGeometry(P.r - 0.6, P.r, 40), new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.6 }));
+    pad.rotation.x = -Math.PI / 2; pad.position.set(P.x, 0.05, P.z); scene.add(pad);
+    groundText(pl.type, P.x, P.z + 0.2, 0.9, { color, bg: 'rgba(255,253,247,.85)' });
+  });
+  // 公車站
+  const st = new THREE.Group();
+  const roofB = box(5, 0.3, 2, '#7c3aed'); roofB.position.y = 3; st.add(roofB);
+  [-2.2, 2.2].forEach((dx) => { const p = box(0.2, 3, 0.2, '#475569'); p.position.set(dx, 1.5, -0.8); st.add(p); });
+  const bench = box(4, 0.4, 0.8, '#a16207'); bench.position.set(0, 0.5, -0.6); st.add(bench);
+  st.position.set(BUS_STOP.x, 0, BUS_STOP.z - 3); scene.add(st);
+  staticBox(BUS_STOP.x, 1.5, BUS_STOP.z - 3.6, 2.5, 1.5, 0.6);
+  banner('職人公車站', BUS_STOP.x, 3.9, BUS_STOP.z - 2, 0.9, { color: '#fff', bg: '#7c3aed' });
+  const ring = new THREE.Mesh(new THREE.RingGeometry(2.4, 3, 40), new THREE.MeshBasicMaterial({ color: '#7c3aed', transparent: true, opacity: 0.7 }));
+  ring.rotation.x = -Math.PI / 2; ring.position.set(BUS_STOP.x, 0.05, BUS_STOP.z); scene.add(ring);
+  groundText('音樂職人城', 18, -22, 2.2, { color: CH_COLOR.pros });
+}
+// 等車的職人（小人偶）
+const waiting = [];
+function makePerson(color) {
+  const g = new THREE.Group();
+  const b = cyl(0.3, 0.38, 1.1, color, 10); b.position.y = 0.55;
+  const h = new THREE.Mesh(new THREE.SphereGeometry(0.3, 12, 10), mat('#fcd9b6')); h.position.y = 1.35;
+  g.add(b, h); g.traverse((o) => { if (o.isMesh) o.castShadow = true; });
+  return g;
+}
+function refreshWaiting() {
+  waiting.forEach((p) => scene.remove(p)); waiting.length = 0;
+  const left = M.pros.jobs.filter((j) => !prog.pros.delivered[j.name] && j !== carrying);
+  left.slice(0, 5).forEach((j, i) => { const p = makePerson(['#f97316', '#0ea5e9', '#22c55e', '#e11d48', '#a855f7', '#eab308'][i % 6]); p.position.set(BUS_STOP.x - 1.6 + i * 0.8, 0.7, BUS_STOP.z - 3.4); scene.add(p); waiting.push(p); });
+}
+let carrying = null;
+
+// ============================================================
+// 巡演巴士（車頭朝 +x）
+// ============================================================
+const WHEEL_R = 0.38;
+function makeBus() {
+  const g = new THREE.Group();
+  const lower = box(2.8, 0.5, 1.4, '#7c3aed'); lower.position.y = 0.05;
+  const upper = box(2.7, 0.75, 1.36, '#f8fafc'); upper.position.y = 0.67;
+  const win = box(2.0, 0.34, 1.38, '#7dd3fc'); win.position.set(-0.2, 0.72, 0);
+  const wind = box(0.05, 0.42, 1.2, '#7dd3fc'); wind.position.set(1.36, 0.72, 0);
+  const stripe = box(2.82, 0.08, 1.42, '#fbbf24'); stripe.position.y = 0.32;
+  const roof = box(2.6, 0.08, 1.3, '#7c3aed'); roof.position.y = 1.08;
+  const horn1 = new THREE.Mesh(new THREE.ConeGeometry(0.28, 0.6, 14, 1, true), mat('#fbbf24', { side: THREE.DoubleSide })); horn1.rotation.z = -Math.PI / 2; horn1.position.set(0.4, 1.35, 0);
+  const hornBase = box(0.4, 0.3, 0.4, '#334155'); hornBase.position.set(0.05, 1.25, 0);
+  g.add(lower, upper, win, wind, stripe, roof, horn1, hornBase);
+  return g;
+}
+function makeWheel() {
+  const w = new THREE.Group();
+  const tire = new THREE.Mesh(new THREE.CylinderGeometry(WHEEL_R, WHEEL_R, 0.3, 20).rotateX(Math.PI / 2), mat('#1f2937'));
+  const hub = new THREE.Mesh(new THREE.CylinderGeometry(WHEEL_R * 0.5, WHEEL_R * 0.5, 0.32, 10).rotateX(Math.PI / 2), mat('#cbd5e1'));
+  tire.castShadow = true; w.add(tire, hub);
+  return w;
+}
+const ENGINE_FORCE = 620, MAX_STEER = 0.5, MAX_SPEED = 12;
+const chassisBody = new CANNON.Body({ mass: 150, angularDamping: 0.6, linearDamping: 0.05 });
+chassisBody.addShape(new CANNON.Box(new CANNON.Vec3(1.3, 0.3, 0.7)));
+chassisBody.allowSleep = false;
+const vehicle = new CANNON.RaycastVehicle({ chassisBody, indexRightAxis: 2, indexUpAxis: 1, indexForwardAxis: 0 });
+const wheelOpt = { radius: WHEEL_R, directionLocal: new CANNON.Vec3(0, -1, 0), suspensionStiffness: 40, suspensionRestLength: 0.25, frictionSlip: 2.4, dampingRelaxation: 2.3, dampingCompression: 4.4, maxSuspensionForce: 100000, rollInfluence: 0.02, axleLocal: new CANNON.Vec3(0, 0, 1), chassisConnectionPointLocal: new CANNON.Vec3(), maxSuspensionTravel: 0.3, customSlidingRotationalSpeed: -30, useCustomSlidingRotationalSpeed: true };
+[[0.85, 0.72], [0.85, -0.72], [-0.85, 0.72], [-0.85, -0.72]].forEach(([x, z]) => { wheelOpt.chassisConnectionPointLocal.set(x, -0.05, z); vehicle.addWheel(wheelOpt); });
+vehicle.addToWorld(world);
+const carMesh = makeBus();
+scene.add(carMesh);
+const wheelMeshes = vehicle.wheelInfos.map(() => { const w = makeWheel(); scene.add(w); return w; });
+const passengerOnRoof = makePerson('#facc15'); passengerOnRoof.position.set(-0.7, 1.12, 0); passengerOnRoof.visible = false; carMesh.add(passengerOnRoof);
+function resetCar(x = SPAWN.x, z = SPAWN.z, yaw = Math.PI / 2) {
+  chassisBody.position.set(x, 1.4, z);
+  chassisBody.quaternion.setFromEuler(0, yaw, 0);
+  chassisBody.velocity.setZero(); chassisBody.angularVelocity.setZero();
+}
+resetCar();
+const arrivedFrom = new URLSearchParams(location.search).get('from');
+if (arrivedFrom === 'physics') {
+  resetCar(PHYS_BRIDGE.x2 + 12, PHYS_BRIDGE.z, 0);   // 停在橋上，車頭朝東開進島
+  Travel.arrive({ to: M.title, sub: '音樂　三下 第5～8課', color: '#e11d48' });   // 過橋轉場的後半段：畫面慢慢淡出
+}
+const carForward = new THREE.Vector3();
+function updateCarForward() { const q = chassisBody.quaternion; carForward.set(1, 0, 0).applyQuaternion(new THREE.Quaternion(q.x, q.y, q.z, q.w)); return carForward; }
+
+// ============================================================
+// 胎痕（約 3 秒淡掉）
+// ============================================================
+const tracks = (() => {
+  const MAX = 400, FADE = 3, WIDTH = 0.24, GAP = 0.3;
+  const mesh = new THREE.InstancedMesh(new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2), new THREE.MeshLambertMaterial({ transparent: true, opacity: 0.5, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 }), MAX);
+  mesh.frustumCulled = false;
+  const base = new THREE.Color('#e9c891'), ink = new THREE.Color('#2b2b2b'), tmp = new THREE.Color();
+  const born = new Float32Array(MAX).fill(-1e9), dark = new Float32Array(MAX), hidden = new THREE.Matrix4().makeScale(0, 0, 0);
+  for (let i = 0; i < MAX; i++) { mesh.setMatrixAt(i, hidden); mesh.setColorAt(i, base); }
+  scene.add(mesh);
+  let head = 0, fadeT = 0; const last = [null, null]; const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), up = new THREE.Vector3(0, 1, 0);
+  return {
+    update(dt, now, braking) {
+      const speed = chassisBody.velocity.length();
+      [2, 3].forEach((wi, k) => {
+        const w = vehicle.wheelInfos[wi], rr = w.raycastResult, p = rr.hitPointWorld;
+        if (!rr.hasHit || speed < 1.2) { last[k] = null; return; }
+        const pt = { x: p.x, y: p.y, z: p.z };
+        if (!last[k]) { last[k] = pt; return; }
+        const d = Math.hypot(pt.x - last[k].x, pt.z - last[k].z);
+        if (d > 3) { last[k] = pt; return; }
+        if (d < GAP) return;
+        q.setFromAxisAngle(up, Math.atan2(-(pt.z - last[k].z), pt.x - last[k].x));
+        m4.compose(new THREE.Vector3((pt.x + last[k].x) / 2, Math.max(pt.y, 0) + 0.06, (pt.z + last[k].z) / 2), q, new THREE.Vector3(d + 0.04, 1, WIDTH));
+        mesh.setMatrixAt(head, m4); born[head] = now; dark[head] = braking || w.sliding ? 0.9 : 0.45;
+        mesh.setColorAt(head, tmp.copy(base).lerp(ink, dark[head])); head = (head + 1) % MAX;
+        mesh.instanceMatrix.needsUpdate = true; mesh.instanceColor.needsUpdate = true; last[k] = pt;
+      });
+      fadeT += dt; if (fadeT < 0.1) return; fadeT = 0;
+      for (let i = 0; i < MAX; i++) {
+        if (born[i] < -1e8) continue;
+        const age = now - born[i];
+        if (age > FADE) { mesh.setMatrixAt(i, hidden); born[i] = -1e9; } else mesh.setColorAt(i, tmp.copy(base).lerp(ink, dark[i] * (1 - age / FADE)));
+      }
+      mesh.instanceMatrix.needsUpdate = true; mesh.instanceColor.needsUpdate = true;
+    }
+  };
+})();
+
+// ============================================================
+// 畫面上方的目標、左上角的章節進度
+// ============================================================
+function goalText() {
+  if (carrying) return { k: '🚌 車上的乘客說：', v: `「${carrying.say}」把我載到工作的地方！`, quote: true };
+  if (allDone() && !prog.ended) return { k: '🎉 全部收集完成', v: '開回中央的「開幕大舞臺」，開幕演唱會要開始了！' };
+  if (prog.ended) return { k: '音樂節開幕了', v: '自由逛逛，再去各站玩一次吧！' };
+  const next = M.chapters.find((c) => !chapterDone[c.id]());
+  return { k: `目前的章節：${next.title}`, v: next.text };
+}
+function renderHud() {
+  $('chips').innerHTML = M.chapters.map((c) => {
+    const d = chapterDone[c.id]();
+    return `<span class="chip ${d ? 'done' : ''}" style="--c:${CH_COLOR[c.id]}">${d ? '✔' : '○'} ${esc(c.title.split('　')[1] || c.title)} ${d ? '' : chapterCount[c.id]()}</span>`;
+  }).join('');
+  const g = goalText();
+  $('goalK').textContent = g.k; $('goalV').textContent = g.v; $('goalV').classList.toggle('quote', !!g.quote);
+  passengerOnRoof.visible = !!carrying;
+  pads.forEach((p) => { const d = stationDone(p.st); p.disc.material.opacity = d ? 0.45 : 0.18; });
+}
+function stationDone(st) {
+  switch (st.kind) {
+    case 'region': return prog.world[st.id];
+    case 'worldquiz': return prog.world.quiz;
+    case 'rockhall': return prog.rock.stomp && prog.rock.quiz;
+    case 'asiahall': return chapterDone.asia();
+    case 'proshall': return prog.pros.quiz;
+  }
+  return false;
+}
+
+// ============================================================
+// 小故事卡
+// ============================================================
+let mode = 'drive';
+function showCard({ kicker, title, place = '', stampText, stampColor = '#7c3aed', body, button = '繼續 →', onClose }) {
+  mode = 'card'; document.body.classList.add('card'); $('toast').style.display = 'none';
+  $('card').innerHTML = `<div class="head"><div class="stamp" style="--sc:${stampColor}">${esc(stampText)}</div><div><div class="kicker">${esc(kicker)}</div><h2>${esc(title)}</h2><div class="place">${esc(place)}</div></div></div>` +
+    paras(body) + `<div class="row"><button class="primary" id="cardOk" style="--c:${stampColor}">${esc(button)}</button></div>`;
+  chassisBody.velocity.scale(0.2, chassisBody.velocity);
+  $('cardOk').onclick = () => { document.body.classList.remove('card'); mode = 'drive'; canvas.focus(); if (onClose) onClose(); };
+}
+let toastTimer = null;
+function showToast(text, ms = 3500) { const el = $('toast'); el.textContent = text; el.style.display = 'block'; clearTimeout(toastTimer); toastTimer = setTimeout(() => (el.style.display = 'none'), ms); }
+let pendingChapter = null;
+function chapterJustDone(id) {
+  if (mode === 'exp') { pendingChapter = id; return; }     // 面板還開著：等關掉再說
+  const c = M.chapters.find((x) => x.id === id);
+  setTimeout(() => {
+    sfx.stamp();
+    showCard({ kicker: '🎉 章節完成', title: c.title, stampText: '✔', stampColor: CH_COLOR[id],
+      body: allDone() ? '四個章節都完成了！開回中央的「開幕大舞臺」，開幕演唱會要開始了！' : '這一區的聲音收集好了！看看上方的任務，前往下一個章節吧。',
+      button: '好 →' });
+  }, 250);
+}
+function markDone(fn, ch) {
+  const was = chapterDone[ch]();
+  fn(); save(); renderHud();
+  if (!was && chapterDone[ch]()) chapterJustDone(ch);
+}
+
+// ============================================================
+// 站點面板
+// ============================================================
+let game = null;          // 正在進行的節奏遊戲（可以接收按鍵）
+let panelSt = null;
+function openStation(st) {
+  mode = 'exp'; panelSt = st;
+  document.body.classList.add('exp');
+  const color = CH_COLOR[st.ch];
+  $('panel').style.setProperty('--c', color);
+  $('pSec').textContent = M.chapters.find((c) => c.id === st.ch).title;
+  $('pName').textContent = st.name;
+  chassisBody.velocity.setZero(); chassisBody.angularVelocity.setZero();
+  $('toast').style.display = 'none';
+  bgm.setLevel(0);
+  RENDER[st.kind](st, $('pBody'));
+  sfx.click(); onResize();
+}
+function closeStation() {
+  stopGame();
+  mode = 'drive'; panelSt = null;
+  document.body.classList.remove('exp');
+  bgm.setLevel(0.5);
+  onResize(); canvas.focus(); renderHud();
+  if (pendingChapter) { const id = pendingChapter; pendingChapter = null; chapterJustDone(id); }
+}
+$('pClose').onclick = closeStation;
+function stopGame() { if (game && game.stop) game.stop(); game = null; }
+
+// 通用：小測驗
+function quizUI(el, qs, onPass, intro = '') {
+  let qi = 0, picked = null;
+  const draw = () => {
+    const q = qs[qi], answered = picked !== null, right = picked === q.answer;
+    el.innerHTML = intro + `<p style="font-size:13px;color:var(--muted)">小測驗　第 ${qi + 1} 題，共 ${qs.length} 題</p><div class="task" style="font-family:var(--ui-font);font-weight:700">${esc(q.q)}</div>` +
+      (q.sound ? `<button class="play" id="qPlay">▶ 播放聲音</button>` : '') +
+      q.options.map((o, i) => `<button class="opt ${answered && i === picked ? (right ? 'right' : 'wrong') : ''}" data-i="${i}">${String.fromCharCode(65 + i)}. ${esc(o)}</button>`).join('') +
+      (answered ? `<div class="feedback ${right ? 'ok' : 'no'}">${right ? '✔ 答對了！' + esc(q.explain) : '✘ 再想想看，換一個答案試試。'}</div>` : '') +
+      `<div class="row"><button class="primary" id="qNext" ${right ? '' : 'disabled'}>${qi + 1 < qs.length ? '下一題 →' : '完成 ✔'}</button></div>`;
+    if (q.sound) $('qPlay').onclick = () => SOUNDS[q.sound]();
+    el.querySelectorAll('.opt').forEach((b) => (b.onclick = () => { if (right) return; picked = +b.dataset.i; picked === q.answer ? sfx.ok() : sfx.bad(); draw(); }));
+    $('qNext').onclick = () => { if (qi + 1 < qs.length) { qi++; picked = null; draw(); } else onPass(); };
+  };
+  draw();
+}
+// 測驗裡「聽聲音」用的短樂句
+const SOUNDS = {
+  accordion: () => playSeq([[ 'accordion', 0, 1, 60 ], ['accordion', 1, 0.5, 64], ['accordion', 1.5, 0.5, 67], ['accordion', 2, 1, 72], ['accordion', 3, 1, 67], ['accordion', 4, 2, 64]], 132),
+  bagpipe: () => { const t = playSeq(AMAZING_GRACE.map(([b, d, m]) => ['bagpipe', b, d, m]), 84); INST.bagpipeDrone(instBus, t, hz(67), 60 / 84 * 13); },
+  mbira: () => playSeq([0, 2, 4, 7, 9, 7, 4, 2, 0, 4].map((s, i) => ['mbira', i * 0.5, 1, 67 + s]), 120)
+};
+// 聖詩〈奇異恩典〉開頭（公共領域）：[拍, 時值, midi]
+const AMAZING_GRACE = [[0, 1, 62], [1, 2, 67], [3, 0.5, 71], [3.5, 0.5, 67], [4, 2, 71], [6, 1, 69], [7, 2, 67], [9, 1, 64], [10, 2, 62], [12, 1, 62]];
+const RENDER = {};
+
+// ---------------- 第一章：地區舞臺 ----------------
+RENDER.region = (st, el) => {
+  const R = M.world.find((w) => w.id === st.id);
+  el.innerHTML = paras(R.intro) + `<div class="task">${esc(R.task)}</div><div id="act"></div><div id="after"></div>`;
+  const finish = () => {
+    stopGame();
+    const first = !prog.world[st.id];
+    markDone(() => (prog.world[st.id] = true), 'world');
+    if (first) sfx.stamp();
+    $('after').innerHTML = `<h3>${esc(R.region)}音樂小知識</h3>` + paras(R.explain) + `<div class="row"><button class="primary" id="back">收下這段聲音，回到巴士 →</button></div>`;
+    $('back').onclick = closeStation;
+    $('after').scrollIntoView({ behavior: 'smooth' });
+  };
+  ACT[st.id]($('act'), finish);
+};
+const ACT = {};
+// 非洲：說話鼓高低音模仿
+ACT.africa = (el, finish) => {
+  const patterns = [['高', '低', '高', '高'], ['低', '高', '低', '低', '高']];
+  let round = 0, input = [];
+  const playPat = (p) => { ac(); const t0 = actx.currentTime + 0.1; p.forEach((x, i) => { const hi = x === '高'; INST.talk(instBus, t0 + i * 0.42, hi ? 330 : 180, hi ? 300 : 150, 0.32); }); };
+  const draw = (msg = '') => {
+    el.innerHTML = `<button class="play" id="pDemo">▶ 聽金貝鼓＋敦敦鼓合奏</button><button class="play" id="pPat">▶ 聽說話鼓（第 ${round + 1}／${patterns.length} 段）</button>` +
+      `<div class="big-btns"><button id="bHi" style="background:#fed7aa">高音</button><button id="bLo" style="background:#c2410c;color:#fff">低音</button></div>` +
+      `<div class="seqview">${input.map((x) => `<span>${x}</span>`).join('') || '<span style="background:none;color:var(--muted)">按高音／低音敲回來</span>'}</div>` +
+      `<div class="row"><button class="ghost" id="bClr">重來這一段</button></div>` + (msg ? `<div class="feedback ${msg.startsWith('✔') ? 'ok' : 'no'}">${esc(msg)}</div>` : '');
+    $('pDemo').onclick = () => {
+      ac(); const t0 = actx.currentTime + 0.1, sp = 60 / 110 / 2;
+      for (let i = 0; i < 16; i++) { const t = t0 + i * sp; if ([0, 3, 6].includes(i % 8)) INST.djembe(instBus, t, i % 8 === 0 ? 'bass' : 'tone'); if (i % 8 === 7) INST.djembe(instBus, t, 'slap'); if (i % 4 === 0) INST.dunun(instBus, t, i % 8 ? 120 : 90); }
+    };
+    $('pPat').onclick = () => playPat(patterns[round]);
+    const press = (x) => {
+      const hi = x === '高'; ac(); INST.talk(instBus, actx.currentTime, hi ? 330 : 180, hi ? 300 : 150, 0.3);
+      input.push(x);
+      const p = patterns[round];
+      if (input[input.length - 1] !== p[input.length - 1]) { sfx.bad(); const msg = '✘ 有一個音不一樣，再聽一次試試！'; input = []; draw(msg); return; }
+      if (input.length === p.length) {
+        sfx.ok(); round++; input = [];
+        if (round >= patterns.length) { el.innerHTML = '<div class="feedback ok">✔ 你成功用說話鼓「說話」了！</div>'; finish(); return; }
+        draw('✔ 答對了！再挑戰下一段。'); return;
+      }
+      draw();
+    };
+    $('bHi').onclick = () => press('高'); $('bLo').onclick = () => press('低');
+    $('bClr').onclick = () => { input = []; draw(); };
+  };
+  draw();
+};
+// 歐洲：弗拉門哥 12 拍重拍拍手
+ACT.europe = (el, finish) => {
+  const ACC = [3, 6, 8, 10, 12], BPM = 130, sp = 60 / BPM;
+  el.innerHTML = `<button class="play" id="pBag">▶ 聽風笛：〈奇異恩典〉開頭</button><button class="play" id="pAcc">▶ 聽手風琴</button><button class="play" id="pWh">▶ 聽愛爾蘭哨笛</button>` +
+    `<div class="beats" id="beats">${Array.from({ length: 12 }, (_, i) => `<span class="${ACC.includes(i + 1) ? 'acc' : ''}">${i + 1}</span>`).join('')}</div>` +
+    `<div class="big-btns"><button id="bStart" style="background:#fecaca">▶ 開始（先聽一輪示範）</button><button id="bClap" style="background:#dc2626;color:#fff">👏 拍手</button></div>` +
+    `<div id="fMsg" class="feedback" style="display:none"></div><p style="font-size:13px;color:var(--muted)">電腦鍵盤也可以按 <kbd>J</kbd> 或 <kbd>空白鍵</kbd> 拍手。</p>`;
+  $('pBag').onclick = SOUNDS.bagpipe; $('pAcc').onclick = SOUNDS.accordion;
+  $('pWh').onclick = () => playSeq([[0, 0.5, 74], [0.5, 0.5, 76], [1, 1, 78], [2, 0.5, 81], [2.5, 0.5, 78], [3, 1, 76], [4, 2, 74]].map(([b, d, m]) => ['whistle', b, d, m]), 110);
+  const cells = [...$('beats').children], msg = $('fMsg');
+  const say = (t, ok) => { msg.style.display = 'block'; msg.className = 'feedback ' + (ok ? 'ok' : 'no'); msg.textContent = t; };
+  let t0 = 0, raf = 0, hits = new Set(), wrong = 0, cycleSeen = -1;
+  const stop = () => { cancelAnimationFrame(raf); clearInterval(sched); };
+  let sched = 0;
+  const start = () => {
+    stopGame(); ac(); t0 = actx.currentTime + 0.3; hits = new Set(); wrong = 0; cycleSeen = -1;
+    let nb = 0;
+    sched = setInterval(() => {
+      while (t0 + nb * sp < actx.currentTime + 0.2) {
+        const t = t0 + nb * sp, beat = (nb % 12) + 1, cyc = Math.floor(nb / 12);
+        INST.wood(instBus, t, beat === 1 ? 1.2 : 0.7);
+        if (cyc === 0 && ACC.includes(beat)) INST.clap(instBus, t, 0.9);      // 第一輪示範
+        INST.castanet(instBus, t + sp / 2, 0.4);
+        nb++;
+      }
+    }, 25);
+    const loop = () => {
+      const now = actx.currentTime - t0, nbF = now / sp, cyc = Math.floor(nbF / 12), beat = Math.floor(nbF % 12);
+      cells.forEach((c, i) => c.classList.toggle('now', i === beat && nbF >= 0));
+      if (cyc !== cycleSeen && nbF >= 0) {
+        if (cycleSeen >= 1) {
+          if (hits.size === ACC.length && wrong <= 1) { stop(); game = null; say('✔ 太棒了！你拍出了弗拉門哥不規則的重拍。', true); finish(); return; }
+          say(`這一輪拍對 ${hits.size}／5 個重拍${wrong ? `，多拍了 ${wrong} 次` : ''}。繼續，下一輪再試！`, false);
+        } else if (cycleSeen === 0) say('換你了！在紅色的重拍拍手。', true);
+        cycleSeen = cyc; hits = new Set(); wrong = 0;
+        cells.forEach((c) => c.classList.remove('hit', 'miss'));
+      }
+      raf = requestAnimationFrame(loop);
+    };
+    loop(); say('先聽一輪示範：紅色的數字就是重拍。', true);
+    game = {
+      stop,
+      key: (code) => { if (code === 'KeyJ' || code === 'Space') { clap(); return true; } return false; }
+    };
+  };
+  const clap = () => {
+    if (!game) return;
+    ac(); INST.clap(instBus, actx.currentTime);
+    const nbF = (actx.currentTime - t0) / sp, near = Math.round(nbF), off = Math.abs(nbF - near) * sp, cyc = Math.floor(near / 12), beat = (near % 12) + 1;
+    if (cyc < 1) return;   // 示範輪不計分
+    if (off < 0.17 && ACC.includes(beat)) { hits.add(beat); cells[beat - 1].classList.add('hit'); }
+    else { wrong++; if (beat >= 1 && beat <= 12) cells[beat - 1].classList.add('miss'); }
+  };
+  $('bStart').onclick = start;
+  $('bClap').onclick = clap;
+};
+// 拉丁美洲：分辨切分節奏
+ACT.latin = (el, finish) => {
+  let need = 2, order = null;
+  const even = () => [0, 1, 2, 3, 4, 5, 6, 7].flatMap((b) => [['bass', b, 0.9, b % 4 === 0 ? 45 : 52], ['accordion', b, 0.5, b % 4 < 2 ? 69 : 72]]);
+  const tango = () => [0, 1.5, 3, 4, 5.5, 7].flatMap((b, i) => [['bass', b, 1.2, i % 3 === 0 ? 45 : 52], ['accordion', b, 0.9, [69, 72, 76][i % 3]]]).concat([[ 'castanet', 0.75 ], ['castanet', 4.75]].map(([n, b]) => [n, b, 0.1]));
+  const draw = (msg = '') => {
+    order = order || (Math.random() < 0.5 ? ['tango', 'even'] : ['even', 'tango']);
+    el.innerHTML = `<button class="play" id="pA">▶ 第一段</button><button class="play" id="pB">▶ 第二段</button>` +
+      `<p style="font-family:var(--ui-font);font-weight:700">哪一段有「搶拍」的切分節奏，是探戈？（還要答對 ${need} 次）</p>` +
+      `<div class="big-btns"><button id="cA">第一段</button><button id="cB">第二段</button></div>` + (msg ? `<div class="feedback ${msg.startsWith('✔') ? 'ok' : 'no'}">${esc(msg)}</div>` : '');
+    const play = (k) => playSeq(k === 'tango' ? tango() : even(), 116);
+    $('pA').onclick = () => play(order[0]); $('pB').onclick = () => play(order[1]);
+    const pick = (i) => {
+      if (order[i] === 'tango') { sfx.ok(); need--; order = null; if (need <= 0) { el.innerHTML = '<div class="feedback ok">✔ 你聽出探戈的切分節奏了！</div>'; finish(); return; } draw('✔ 答對了！再來一組。'); }
+      else { sfx.bad(); draw('✘ 這一段每一拍都很平均。再聽聽另一段，重音是不是「搶拍」了？'); }
+    };
+    $('cA').onclick = () => pick(0); $('cB').onclick = () => pick(1);
+  };
+  draw();
+};
+// 大洋洲：吹海螺
+ACT.oceania = (el, finish) => {
+  el.innerHTML = `<div class="big-btns"><button id="bConch" style="background:#cffafe">🐚 吹海螺</button></div>`;
+  let done = false;
+  $('bConch').onclick = () => { ac(); INST.conch(instBus, actx.currentTime, 196, 1.8); if (!done) { done = true; setTimeout(finish, 900); } };
+};
+// 世界音樂小測驗
+RENDER.worldquiz = (st, el) => {
+  const regions = ['africa', 'europe', 'latin', 'oceania'];
+  const left = regions.filter((r) => !prog.world[r]);
+  if (left.length) {
+    el.innerHTML = `<div class="task">先到四個地區舞臺收集聲音，再回來挑戰小測驗！</div><div class="checks">${regions.map((r) => { const R = M.world.find((w) => w.id === r); return `<span class="${prog.world[r] ? 'ok' : ''}">${prog.world[r] ? '✔' : '○'} ${esc(R.region)}</span>`; }).join('')}</div>` +
+      `<div class="row"><button class="ghost" id="back">回到巴士</button></div>`;
+    $('back').onclick = closeStation; return;
+  }
+  quizUI(el, M.worldQuiz, () => {
+    markDone(() => (prog.world.quiz = true), 'world');
+    el.innerHTML = '<div class="feedback ok">✔ 世界音樂小測驗完成！</div><div class="row"><button class="primary" id="back">回到巴士 →</button></div>';
+    $('back').onclick = closeStation;
+  });
+};
+
+// ---------------- 第二章：搖滾名人堂（說明、跺腳拍手、測驗） ----------------
+RENDER.rockhall = (st, el) => {
+  const R = M.rock, P = prog.rock.placed;
+  const placedAll = Object.values(P).every(Boolean);
+  el.innerHTML = paras(R.intro) +
+    `<h3>樂團上臺了嗎？</h3><div class="checks">${R.instruments.map((i) => `<span class="${P[i.id] ? 'ok' : ''}">${P[i.id] ? '✔' : '○'} ${esc(i.name)}</span>`).join('')}</div>` +
+    `<div class="hall">${R.instruments.map((i) => `<div><b>${esc(i.name)}</b>：${esc(i.role)}</div>`).join('')}</div>` +
+    (placedAll ? '' : `<div class="task">${esc(R.task)}</div>`) +
+    `<h3>搖滾名人堂</h3><div class="hall">${R.hall.map((h) => `<div><b>${esc(h.name)}</b>：${esc(h.text)}</div>`).join('')}</div>` +
+    `<h3>「咚、咚、啪」節奏挑戰 ${prog.rock.stomp ? '✔' : ''}</h3><div id="stomp"></div><div id="rq"></div>`;
+  stompGame($('stomp'), () => {
+    markDone(() => (prog.rock.stomp = true), 'rock');
+    showQuiz();
+  });
+  function showQuiz() {
+    if (prog.rock.quiz) { $('rq').innerHTML = `<div class="feedback ok">✔ 小測驗已完成。</div>${placedAll ? '' : '<p>別忘了把四件樂器都推上舞臺喔！</p>'}<div class="row"><button class="primary" id="back">回到巴士 →</button></div>`; $('back').onclick = closeStation; return; }
+    $('rq').innerHTML = `<h3>樂團小測驗</h3>${paras(R.explain)}<div id="rqq"></div>`;
+    quizUI($('rqq'), R.quiz, () => {
+      markDone(() => (prog.rock.quiz = true), 'rock');
+      $('rq').innerHTML = `<div class="feedback ok">✔ 樂團小測驗完成！</div>${placedAll ? '' : '<p>別忘了把四件樂器都推上舞臺喔！</p>'}<div class="row"><button class="primary" id="back">回到巴士 →</button></div>`;
+      $('back').onclick = closeStation;
+    });
+  }
+  if (prog.rock.stomp) showQuiz();
+};
+function stompGame(el, onPass) {
+  const BPM = 81, sp = 60 / BPM / 2;       // 八分音符：咚、咚、啪、（休）
+  const PAT = ['stomp', 'stomp', 'clap', null];
+  el.innerHTML = `<div class="task">${esc(M.rock.stompTask)}</div>` +
+    `<div class="big-btns"><button id="sStart" style="background:#fee2e2">▶ 開始</button></div>` +
+    `<div class="big-btns"><button id="sSt" style="background:#78350f;color:#fff">🦶 咚（跺腳）</button><button id="sCl" style="background:#dc2626;color:#fff">👏 啪（拍手）</button></div>` +
+    `<div class="seqview" id="sView"></div><div id="sMsg" class="feedback" style="display:none"></div>` +
+    `<p style="font-size:13px;color:var(--muted)">鍵盤：<kbd>F</kbd> 跺腳、<kbd>J</kbd> 拍手。前兩輪是示範。</p>`;
+  const view = $('sView'), msg = $('sMsg');
+  const say = (t, ok) => { msg.style.display = 'block'; msg.className = 'feedback ' + (ok ? 'ok' : 'no'); msg.textContent = t; };
+  let t0 = 0, sched = 0, raf = 0, streak = 0, got = [], bad = 0, cycSeen = -1;
+  const stop = () => { clearInterval(sched); cancelAnimationFrame(raf); };
+  const start = () => {
+    stopGame(); ac(); t0 = actx.currentTime + 0.3; streak = 0; got = []; bad = 0; cycSeen = -1;
+    let n = 0;
+    sched = setInterval(() => {
+      while (t0 + n * sp < actx.currentTime + 0.2) {
+        const t = t0 + n * sp, slot = n % 4, cyc = Math.floor(n / 4);
+        if (slot === 0) INST.wood(instBus, t, 0.6);
+        if (cyc < 2 && PAT[slot]) INST[PAT[slot]](instBus, t, 0.9);
+        n++;
+      }
+    }, 25);
+    const loop = () => {
+      const f = (actx.currentTime - t0) / sp, cyc = Math.floor(f / 4);
+      if (cyc !== cycSeen && f >= 0) {
+        if (cycSeen >= 2) {
+          const ok = got.length === 3 && got.every(Boolean) && bad === 0;
+          streak = ok ? streak + 1 : 0;
+          if (streak >= 4) { stop(); game = null; say('✔ 太帥了！你打出了經典的搖滾節奏。', true); onPass(); return; }
+          say(ok ? `✔ 正確！連續 ${streak}／4 輪` : '✘ 這一輪沒對齊，連續次數重新算。注意是「咚、咚、啪」！', ok);
+        } else if (cycSeen === 1) say('換你了！', true);
+        cycSeen = cyc; got = [false, false, false]; got.length = 3; bad = 0;
+      }
+      view.innerHTML = ['咚', '咚', '啪', '（休）'].map((x, i) => `<span style="${Math.floor(f % 4) === i ? 'outline:3px solid var(--ink)' : ''}">${x}</span>`).join('');
+      raf = requestAnimationFrame(loop);
+    };
+    loop(); say('先聽兩輪示範……', true);
+    game = { stop, key: (code) => { if (code === 'KeyF') { hit('stomp'); return true; } if (code === 'KeyJ' || code === 'Space') { hit('clap'); return true; } return false; } };
+  };
+  const hit = (type) => {
+    if (!game) return;
+    ac(); INST[type](instBus, actx.currentTime);
+    const f = (actx.currentTime - t0) / sp, near = Math.round(f), off = Math.abs(f - near) * sp, slot = ((near % 4) + 4) % 4, cyc = Math.floor(near / 4);
+    if (cyc < 2) return;
+    if (off < 0.13 && PAT[slot] === type && cyc === cycSeen) got[slot] = true; else bad++;
+  };
+  $('sStart').onclick = start;
+  $('sSt').onclick = () => hit('stomp');
+  $('sCl').onclick = () => hit('clap');
+}
+
+// ---------------- 第三章：亞洲音樂視聽室（音階、樂器分類、測驗） ----------------
+const melodyIn = (li) => {
+  const ln = LANES[li], st = ln.steps, seq = [0, 1, 2, 3, 4, 5, 4, 3, 2, 4, 3, 1, 0];
+  return seq.map((d, i) => ['pluck', i * 0.5, 0.9, ln.base + st[d % 5] + 12 * Math.floor(d / 5)]);
+};
+RENDER.asiahall = (st, el) => {
+  const A = M.asia;
+  el.innerHTML = paras(A.intro) + `<h3>① 用耳朵分辨音階 ${prog.asia.scale ? '✔' : ''}</h3><div id="sc"></div><h3>② 國樂器分家族 ${prog.asia.family ? '✔' : ''}</h3><div id="fam"></div><div id="aq"></div>`;
+  // ① 音階
+  const sc = $('sc');
+  let target = Math.floor(Math.random() * 3), need = 3;
+  const drawScale = (msg = '') => {
+    sc.innerHTML = `<div class="task">${esc(A.scaleTask)}</div>` +
+      A.scales.map((s, i) => `<button class="play" data-up="${i}">▶ ${esc(s.name)}（${esc(s.notes)}）</button>`).join('') +
+      (prog.asia.scale ? '' : `<p style="font-family:var(--ui-font);font-weight:700">這段旋律用的是哪一種音階？（還要答對 ${need} 次）</p><button class="play" id="sQ" style="background:#fbcfe8">▶ 播放題目旋律</button>` +
+      `<div class="big-btns">${A.scales.map((s, i) => `<button data-a="${i}" style="font-size:15px">${esc(s.name)}</button>`).join('')}</div>`) +
+      (msg ? `<div class="feedback ${msg.startsWith('✔') ? 'ok' : 'no'}">${esc(msg)}</div>` : '');
+    sc.querySelectorAll('[data-up]').forEach((b) => (b.onclick = () => { const ln = LANES[+b.dataset.up]; playSeq([0, 1, 2, 3, 4, 5].map((d, k) => ['pluck', k * 0.5, 0.9, ln.base + ln.steps[d % 5] + 12 * Math.floor(d / 5)]), 120); }));
+    if (prog.asia.scale) return;
+    $('sQ').onclick = () => playSeq(melodyIn(target), 132);
+    sc.querySelectorAll('[data-a]').forEach((b) => (b.onclick = () => {
+      if (+b.dataset.a === target) {
+        sfx.ok(); need--;
+        if (need <= 0) { markDone(() => (prog.asia.scale = true), 'asia'); drawScale('✔ 三種音階你都聽得出來了！'); checkAsiaQuiz(); return; }
+        target = Math.floor(Math.random() * 3); drawScale('✔ 答對了！再聽下一段。');
+      } else { sfx.bad(); drawScale('✘ 不是喔。先按上面三個按鈕比較三種音階的味道，再聽一次題目試試！'); }
+    }));
+  };
+  drawScale();
+  // ② 樂器分類
+  const fam = $('fam');
+  let idx = 0, wrongPick = null;
+  const drawFam = (msg = '') => {
+    if (prog.asia.family) { fam.innerHTML = '<div class="feedback ok">✔ 七件國樂器都分好了！</div>'; return; }
+    const ins = A.instruments[idx];
+    fam.innerHTML = `<div class="task">${esc(A.familyTask)}（${idx + 1}／${A.instruments.length}）</div>` +
+      `<p style="font-family:var(--ui-font);font-size:20px;font-weight:900;margin:4px 0">${esc(ins.name)}</p><p>${esc(ins.hint)}</p>` +
+      `<button class="play" id="fPlay">▶ 聽聽${esc(ins.name)}（模擬音色）</button>` +
+      `<div class="fam-grid">${A.families.map((f, i) => `<button data-f="${i}" class="${wrongPick === i ? 'wrong' : ''}">${esc(f)}</button>`).join('')}</div>` +
+      (msg ? `<div class="feedback ${msg.startsWith('✔') ? 'ok' : 'no'}">${esc(msg)}</div>` : '');
+    $('fPlay').onclick = () => {
+      const s = ins.sound;
+      if (s === 'gong') { ac(); INST.gong(instBus, actx.currentTime + 0.05); }
+      else if (s === 'woodblock') playSeq([0, 0.5, 1, 1.5, 2, 3].map((b) => ['wood', b, 0.1]), 120);
+      else playSeq([67, 69, 72, 74, 76, 74, 72].map((m, k) => [s, k * 0.5, 1, m - (s === 'guqin' ? 12 : 0)]), 104);
+    };
+    fam.querySelectorAll('[data-f]').forEach((b) => (b.onclick = () => {
+      if (+b.dataset.f === ins.family) {
+        sfx.ok(); idx++; wrongPick = null;
+        if (idx >= A.instruments.length) { markDone(() => (prog.asia.family = true), 'asia'); drawFam(); checkAsiaQuiz(); return; }
+        drawFam(`✔ 對！${ins.name}是${A.families[ins.family]}。`);
+      } else { sfx.bad(); wrongPick = +b.dataset.f; drawFam('✘ 再想想：它是用吹的、拉的、撥的，還是敲的？'); }
+    }));
+  };
+  drawFam();
+  // ③ 測驗（前兩項完成後出現）
+  function checkAsiaQuiz() {
+    const aq = $('aq');
+    if (!aq || !(prog.asia.scale && prog.asia.family)) return;
+    if (prog.asia.quiz) { aq.innerHTML = '<h3>③ 亞洲音樂小測驗 ✔</h3><div class="row"><button class="primary" id="back">回到巴士 →</button></div>'; $('back').onclick = closeStation; return; }
+    aq.innerHTML = `<h3>③ 亞洲音樂小測驗</h3>${paras(A.explain)}<button class="play" id="pSamul">▶ 聽四物農樂的鑼鼓（模擬）</button><button class="play" id="pGam">▶ 聽甘美朗的層疊（模擬）</button><div id="aqq"></div>`;
+    $('pSamul').onclick = () => { ac(); const t0 = actx.currentTime + 0.05, s = 0.2; for (let i = 0; i < 16; i++) { const t = t0 + i * s; if (i % 2 === 0) INST.castanet(instBus, t, 0.8); if (i % 4 === 0) INST.dunun(instBus, t, 110); if (i % 4 === 2) INST.djembe(instBus, t, 'slap', 0.7); if (i % 8 === 0) INST.gong(instBus, t, 140, 1.4); } };
+    $('pGam').onclick = () => {
+      const sl = [0, 2, 4, 7, 9], notes = [];
+      [0, 1, 2, 3, 2, 1, 4, 3].forEach((d, i) => notes.push(['metallo', i, 1, 67 + sl[d]]));
+      [0, 1, 2, 3, 2, 1, 4, 3].forEach((d, i) => { notes.push(['metallo', i, 0.5, 79 + sl[d]]); notes.push(['metallo', i + 0.5, 0.5, 79 + sl[(d + 1) % 5]]); });
+      notes.push(['gong', 7.5, 2]);
+      playSeq(notes.map((n) => (n[0] === 'gong' ? ['gong', n[1], n[2]] : n)), 96);
+    };
+    quizUI($('aqq'), A.quiz, () => {
+      markDone(() => (prog.asia.quiz = true), 'asia');
+      aq.innerHTML = '<div class="feedback ok">✔ 亞洲音樂小測驗完成！</div><div class="row"><button class="primary" id="back">回到巴士 →</button></div>';
+      $('back').onclick = closeStation;
+    });
+  }
+  checkAsiaQuiz();
+};
+
+// ---------------- 第四章：音樂職人服務臺（說明、夢想、測驗） ----------------
+RENDER.proshall = (st, el) => {
+  const Pr = M.pros, done = M.pros.jobs.filter((j) => prog.pros.delivered[j.name]).length;
+  el.innerHTML = paras(Pr.intro) + `<div class="checks">${Pr.jobs.map((j) => `<span class="${prog.pros.delivered[j.name] ? 'ok' : ''}">${prog.pros.delivered[j.name] ? '✔ ' + esc(j.name) : '○ ？？？'}</span>`).join('')}</div>`;
+  if (done < Pr.jobs.length) {
+    el.innerHTML += `<div class="task">先到「職人公車站」載乘客，把 ${Pr.jobs.length} 位音樂職人都送到工作的地方（已送 ${done} 位）。</div><div class="row"><button class="ghost" id="back">回到巴士</button></div>`;
+    $('back').onclick = closeStation; return;
+  }
+  el.innerHTML += paras(Pr.explain) + `<h3>我的「藝」想世界</h3><p>${esc(Pr.dreamQ)}</p><div class="dream">${Pr.places.map((p) => `<button data-d="${p.type}" class="${prog.pros.dream === p.type ? 'on' : ''}">${esc(p.type)}</button>`).join('')}<button data-d="音樂研究" class="${prog.pros.dream === '音樂研究' ? 'on' : ''}">音樂研究</button></div><div id="pq"></div>`;
+  el.querySelectorAll('[data-d]').forEach((b) => (b.onclick = () => { prog.pros.dream = b.dataset.d; save(); el.querySelectorAll('[data-d]').forEach((x) => x.classList.toggle('on', x === b)); sfx.click(); showPQ(); }));
+  function showPQ() {
+    const pq = $('pq');
+    if (!prog.pros.dream) { pq.innerHTML = '<p style="color:var(--muted);font-size:14px">選一個你最想做的工作（沒有標準答案），再進行小測驗。</p>'; return; }
+    if (prog.pros.quiz) { pq.innerHTML = '<div class="feedback ok">✔ 小測驗已完成。</div><div class="row"><button class="primary" id="back">回到巴士 →</button></div>'; $('back').onclick = closeStation; return; }
+    quizUI(pq, Pr.quiz, () => {
+      markDone(() => (prog.pros.quiz = true), 'pros');
+      pq.innerHTML = '<div class="feedback ok">✔ 小測驗完成！</div><div class="row"><button class="primary" id="back">回到巴士 →</button></div>';
+      $('back').onclick = closeStation;
+    });
+  }
+  showPQ();
+};
+
+// ============================================================
+// 世界裡的互動：琴鍵大道、樂器箱、公車站、演唱會
+// ============================================================
+let keyState = { li: -1, k: -1 };
+function checkKeys() {
+  const p = chassisBody.position;
+  if (p.x < KEYS.x0 || p.x > KEYS.x1) { keyState = { li: -1, k: -1 }; return; }
+  const li = LANES.findIndex((l) => Math.abs(p.z - l.z) < 3);
+  const k = Math.floor((p.x - KEYS.x0) / ((KEYS.x1 - KEYS.x0) / KEYS.n));
+  if (li < 0) { keyState = { li: -1, k: -1 }; return; }
+  if (li === keyState.li && k === keyState.k) return;
+  keyState = { li, k };
+  const ln = LANES[li], m = ln.base + ln.steps[k % 5] + 12 * Math.floor(k / 5);
+  if (audioPref.sfx) { ac(); INST[ln.inst](instBus, actx.currentTime, hz(m)); }
+  const tile = keyTiles.find((t) => t.li === li && t.k === k);
+  if (tile) tile.m.emissiveIntensity = 1.2;
+}
+function checkCrates() {
+  crates.forEach((c) => {
+    const p = c.body.position;
+    if (!prog.rock.placed[c.ins.id] && Math.abs(p.x - ROCK.x) < ROCK.hw - 0.3 && Math.abs(p.z - ROCK.z) < ROCK.hd - 0.3) {
+      markDone(() => (prog.rock.placed[c.ins.id] = true), 'rock');
+      sfx.ok();
+      const n = Object.values(prog.rock.placed).filter(Boolean).length;
+      showToast(`🎸 ${c.ins.name}上臺了！${c.ins.role}（${n}／4）`, 4500);
+    }
+  });
+}
+let nearPad = null, inZone = null;
+function checkPads(t) {
+  const p = chassisBody.position;
+  let found = null;
+  pads.forEach((pd) => { pd.ringMat.emissiveIntensity = 0.25 + 0.2 * Math.sin(t * 4); if (Math.hypot(p.x - pd.st.x, p.z - pd.st.z) < 3.3) found = pd; });
+  if (found === nearPad) return;
+  nearPad = found;
+  const el = $('prompt');
+  if (found) { el.style.setProperty('--c', CH_COLOR[found.st.ch]); el.innerHTML = `<b>【${esc(found.st.name)}】</b>${isTouch ? '點這裡' : '按 Enter'} 進站`; el.style.display = 'block'; sfx.click(); }
+  else el.style.display = 'none';
+}
+$('prompt').onclick = () => { if (nearPad) openStation(nearPad.st); else if (replayHere) startFinale(true); };
+function checkBusStop() {
+  const p = chassisBody.position;
+  // 上車
+  if (!carrying && Math.hypot(p.x - BUS_STOP.x, p.z - BUS_STOP.z) < 3) {
+    const next = M.pros.jobs.find((j) => !prog.pros.delivered[j.name]);
+    if (next) {
+      carrying = next; refreshWaiting(); renderHud(); sfx.ok();
+      showCard({ kicker: '🚌 乘客上車了', title: '我在哪裡工作？', stampText: '?', stampColor: CH_COLOR.pros, body: `「${next.say}」\n請把我載到工作的地方。`, button: '出發 →' });
+    }
+    return;
+  }
+  // 下車
+  if (carrying) {
+    for (const id in PLACES) {
+      const P = PLACES[id];
+      if (Math.hypot(p.x - P.x, p.z - P.z) > P.r) { if (inZone === id) inZone = null; continue; }
+      if (inZone === id) return;
+      inZone = id;
+      const pl = M.pros.places.find((x) => x.id === id);
+      if (id === carrying.place) {
+        const job = carrying; carrying = null;
+        markDone(() => (prog.pros.delivered[job.name] = true), 'pros');
+        refreshWaiting(); sfx.stamp();
+        const left = M.pros.jobs.filter((j) => !prog.pros.delivered[j.name]).length;
+        showCard({ kicker: `✔ 送到了！（${pl.type}）`, title: job.name, place: pl.name, stampText: job.name[0], stampColor: CH_COLOR.pros,
+          body: `「${job.say}」\n${job.name}屬於「${pl.type}」類的音樂工作。` + (left ? `\n公車站還有 ${left} 位職人在等車。` : '\n所有職人都到齊了！到「音樂職人服務臺」完成這一章。'), button: '好 →' });
+      } else { sfx.bad(); showToast(`這裡是「${pl.name}」（${pl.type}）。再想想乘客說的話，他在哪裡工作？`, 4500); }
+      return;
+    }
+  }
+}
+
+// ---------------- 結局：開幕演唱會 ----------------
+let finaleT = -1;
+let replayHere = false;      // 破關之後停在舞臺上：可以按 Enter 重播演唱會
+function checkFinale() {
+  if (finaleT >= 0) return;
+  const p = chassisBody.position, on = Math.hypot(p.x - MAIN.x, p.z - MAIN.z) < MAIN.r - 1;
+  if (!prog.ended) { if (allDone() && on) startFinale(); return; }
+  const here = on && !nearPad;
+  if (here === replayHere) return;
+  replayHere = here;
+  const el = $('prompt');
+  if (here) { el.style.setProperty('--c', '#7c3aed'); el.innerHTML = `<b>【開幕大舞臺】</b>${isTouch ? '點這裡' : '按 Enter'} 重播開幕演唱會`; el.style.display = 'block'; sfx.click(); }
+  else if (!nearPad) el.style.display = 'none';
+}
+function startFinale(replay = false) {
+  mode = 'finale'; document.body.classList.add('finale'); $('prompt').style.display = 'none'; $('toast').style.display = 'none';
+  replayHere = false;
+  show.start();
+  [carMesh, ...wheelMeshes].forEach((o) => (o.visible = false));
+  chassisBody.velocity.setZero(); band.setVol(0); bgm.setLevel(0);
+  ac(); finaleT = 0;
+  const t0 = actx.currentTime + 0.3, sp = 60 / 112 / 2, chords = [57, 53, 48, 55], o = instBus;
+  for (let s = 0; s < 128; s++) {
+    const t = t0 + s * sp, bar = Math.floor(s / 8) % 4, i = s % 8, sec = Math.floor(s / 32);
+    // 第 1 段：非洲鼓；第 2 段：加弗拉門哥拍手；第 3 段：加搖滾樂團；第 4 段：加琴鍵大道的五聲旋律
+    if (i === 0 || i === 3 || i === 6) INST.djembe(o, t, i === 0 ? 'bass' : 'tone');
+    if (i === 4) INST.dunun(o, t, 100);
+    if (sec >= 1 && (i === 2 || i === 5 || i === 7)) INST.clap(o, t, 0.7);
+    if (sec >= 2) { if (i % 4 === 0) INST.kick(o, t); if (i % 4 === 2) INST.snare(o, t); INST.hat(o, t, 0.6); if (i % 2 === 0) INST.bass(o, t, hz(chords[bar] - 12), sp * 1.8); if (i === 0) INST.guitar(o, t, hz(chords[bar]), sp * 6); }
+    if (sec >= 3) { const st = [0, 2, 4, 7, 9], d = [4, 3, 2, 0, 1, 2, 4, 3][i]; INST.zheng(o, t, hz(69 + st[d])); }
+    if (s === 0 || s === 127) INST.gong(o, t, 110, 3);
+  }
+  setTimeout(() => {
+    show.stop();
+    [carMesh, ...wheelMeshes].forEach((o) => (o.visible = true));
+    if (replay) {
+      document.body.classList.remove('finale'); mode = 'drive'; finaleT = -1; bgm.setLevel(0.5); renderHud();
+      showToast('🎉 謝幕！想再看一次，停在舞臺上按 Enter。', 4000);
+      return;
+    }
+    prog.ended = true; save();
+    document.body.classList.remove('finale'); mode = 'drive'; finaleT = -1; bgm.setLevel(0.5); renderHud();
+    sfx.stamp();
+    Player.refresh();
+    showCard({ kicker: '🎉 結局', title: M.storyTitle, stampText: '♫', stampColor: '#7c3aed', body: Player.fill(M.ending), button: '領取破關證書 →',
+      onClose: () => Player.certificate(CERT) });
+  }, 128 * sp * 1000 + 1200);
+}
+
+// ============================================================
+// 操作：鍵盤、觸控搖桿
+// ============================================================
+const keys = {}, joy = { x: 0, y: 0 };
+let touchBrake = false;
+addEventListener('keydown', (e) => {
+  if (game && game.key && game.key(e.code)) { e.preventDefault(); return; }   // 節奏遊戲優先
+  if (e.target.closest && e.target.closest('#panel, #card')) return;
+  keys[e.code] = true;
+  if (mode === 'exp') { if (e.code === 'Escape') closeStation(); return; }
+  if (mode === 'card') { if (e.code === 'Enter' || e.code === 'Escape') $('cardOk')?.click(); return; }
+  if (mode !== 'drive') return;
+  if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(e.code)) e.preventDefault();
+  if (e.code === 'Enter' && nearPad) openStation(nearPad.st);
+  else if (e.code === 'Enter' && replayHere) startFinale(true);
+  if (e.code === 'KeyR') resetCar();
+  if (e.code === 'KeyH') horn();
+  if (e.code === 'KeyL') carLights.toggle();
+});
+addEventListener('keyup', (e) => { keys[e.code] = false; });
+addEventListener('blur', () => { for (const k in keys) keys[k] = false; });
+{
+  const pad = $('joy'), knob = $('joyKnob'); let id = null;
+  const move = (e) => { const r = pad.getBoundingClientRect(); let dx = (e.clientX - (r.left + r.width / 2)) / (r.width / 2), dy = (e.clientY - (r.top + r.height / 2)) / (r.height / 2); const len = Math.hypot(dx, dy); if (len > 1) { dx /= len; dy /= len; } joy.x = dx; joy.y = -dy; knob.style.transform = `translate(${dx * 37}px, ${dy * 37}px)`; };
+  pad.addEventListener('pointerdown', (e) => { id = e.pointerId; pad.setPointerCapture(id); move(e); });
+  pad.addEventListener('pointermove', (e) => { if (e.pointerId === id) move(e); });
+  const end = (e) => { if (e.pointerId !== id) return; id = null; joy.x = joy.y = 0; knob.style.transform = ''; };
+  pad.addEventListener('pointerup', end); pad.addEventListener('pointercancel', end);
+  const bb = $('brakeBtn');
+  bb.addEventListener('pointerdown', (e) => { touchBrake = true; bb.setPointerCapture(e.pointerId); });
+  bb.addEventListener('pointerup', () => (touchBrake = false)); bb.addEventListener('pointercancel', () => (touchBrake = false));
+  $('hornBtn').addEventListener('pointerdown', (e) => { e.preventDefault(); horn(); });
+}
+let steerVal = 0;
+function driveInput(dt) {
+  let th = 0, st = 0;
+  if (keys.ArrowUp || keys.KeyW) th += 1;
+  if (keys.ArrowDown || keys.KeyS) th -= 1;
+  if (keys.ArrowLeft || keys.KeyA) st += 1;
+  if (keys.ArrowRight || keys.KeyD) st -= 1;
+  th = clamp(th + joy.y, -1, 1); st = clamp(st - joy.x, -1, 1);
+  if (mode !== 'drive') { th = 0; st = 0; }
+  updateCarForward();
+  const brake = mode !== 'drive' || keys.Space || touchBrake;
+  const v = chassisBody.velocity, fwd = v.x * carForward.x + v.y * carForward.y + v.z * carForward.z;
+  let force = th * ENGINE_FORCE;
+  if (Math.abs(fwd) > MAX_SPEED && Math.sign(th) === Math.sign(fwd)) force = 0;
+  vehicle.applyEngineForce(force, 2); vehicle.applyEngineForce(force, 3);
+  steerVal += (st * MAX_STEER - steerVal) * Math.min(1, dt * 8);
+  vehicle.setSteeringValue(steerVal, 0); vehicle.setSteeringValue(steerVal, 1);
+  const b = brake ? 12 : th === 0 ? 1.2 : 0;
+  for (let i = 0; i < 4; i++) vehicle.setBrake(b, i);
+}
+// 回力與運動實驗島：開到橋尾的拱門，畫面淡出後換回物理島的網頁
+function checkHomeBridge() {
+  const p = chassisBody.position;
+  if (p.x > PHYS_BRIDGE.x2 + 4 || Math.abs(p.z - PHYS_BRIDGE.z) > PHYS_BRIDGE.hw + 1) return;
+  mode = 'travel';
+  bgm.setLevel(0); band.setVol(0);
+  Travel.go({ from: M.title, fromColor: '#e11d48', to: '力與運動實驗島', sub: '自然　九上 第2章', color: '#2563eb', url: PHYS_BRIDGE.url });
+}
+let flipTime = 0;
+function checkFlip(dt) {
+  const q = chassisBody.quaternion, up = new THREE.Vector3(0, 1, 0).applyQuaternion(new THREE.Quaternion(q.x, q.y, q.z, q.w));
+  flipTime = up.y < 0.3 ? flipTime + dt : 0;
+  const p = chassisBody.position;
+  if (p.y < -4) { resetCar(); flipTime = 0; return; }
+  if (flipTime > 1.5) { resetCar(p.x, p.z, Math.atan2(-carForward.z, carForward.x)); flipTime = 0; }
+}
+
+// ============================================================
+// 小地圖
+// ============================================================
+const mm = $('minimap'), mctx = mm.getContext('2d');
+function drawMinimap() {
+  const W = mm.width, H = mm.height, X0 = -130, X1 = 190, Z0 = -66, Z1 = 66;
+  const s = Math.min((W - 16) / (X1 - X0), (H - 16) / (Z1 - Z0)), ox = W / 2 - ((X0 + X1) / 2) * s, oz = H / 2 - ((Z0 + Z1) / 2) * s;
+  const px = (x) => ox + x * s, pz = (z) => oz + z * s;
+  mctx.clearRect(0, 0, W, H); mctx.fillStyle = '#bfe3f0'; mctx.fillRect(0, 0, W, H);
+  mctx.beginPath(); OUTLINE.forEach((p, i) => (i ? mctx.lineTo(px(p.x), pz(p.z)) : mctx.moveTo(px(p.x), pz(p.z)))); mctx.closePath();
+  mctx.fillStyle = '#e9c891'; mctx.fill(); mctx.lineWidth = 2; mctx.strokeStyle = '#8a5a2b'; mctx.stroke();
+  mctx.fillStyle = '#5b3a22'; mctx.fillRect(px(NECK.x0), pz(-NECK.hw), (NECK.x1 - NECK.x0) * s, NECK.hw * 2 * s);
+  mctx.fillStyle = '#cbb38a'; mctx.fillRect(0, pz(PHYS_BRIDGE.z - PHYS_BRIDGE.hw), px(PHYS_BRIDGE.x1), PHYS_BRIDGE.hw * 2 * s);   // 往物理島的橋（伸出小地圖外）
+  LANES.forEach((l) => { mctx.fillStyle = l.color; mctx.fillRect(px(KEYS.x0), pz(l.z - 1.5), (KEYS.x1 - KEYS.x0) * s, 3 * s); });
+  mctx.beginPath(); mctx.arc(px(MAIN.x), pz(MAIN.z), MAIN.r * s, 0, Math.PI * 2); mctx.fillStyle = '#1e1b4b'; mctx.fill();
+  const dot = (x, z, c, done, r = 6) => { mctx.beginPath(); mctx.arc(px(x), pz(z), r, 0, Math.PI * 2); mctx.fillStyle = done ? c : '#fff'; mctx.fill(); mctx.lineWidth = 3; mctx.strokeStyle = c; mctx.stroke(); };
+  pads.forEach((pd) => dot(pd.st.x, pd.st.z, CH_COLOR[pd.st.ch], stationDone(pd.st)));
+  dot(BUS_STOP.x, BUS_STOP.z, CH_COLOR.pros, false, 5);
+  if (carrying) { const P = PLACES[carrying.place]; }   // 不提示答案
+  crates.forEach((c) => { mctx.fillStyle = prog.rock.placed[c.ins.id] ? '#16a34a' : '#dc2626'; mctx.fillRect(px(c.body.position.x) - 3, pz(c.body.position.z) - 3, 6, 6); });
+  const p = chassisBody.position, a = Math.atan2(carForward.z, carForward.x);
+  mctx.save(); mctx.translate(px(p.x), pz(p.z)); mctx.rotate(a);
+  mctx.beginPath(); mctx.moveTo(10, 0); mctx.lineTo(-7, 7); mctx.lineTo(-3, 0); mctx.lineTo(-7, -7); mctx.closePath();
+  mctx.fillStyle = '#7c3aed'; mctx.fill(); mctx.lineWidth = 2; mctx.strokeStyle = '#fff'; mctx.stroke(); mctx.restore();
+}
+
+// ============================================================
+// 鏡頭
+// ============================================================
+const camPos = new THREE.Vector3(), camTarget = new THREE.Vector3();
+let effAspect = innerWidth / innerHeight;
+function driveCamera() {
+  const p = chassisBody.interpolatedPosition, portrait = innerHeight > innerWidth;
+  const off = portrait ? new THREE.Vector3(0, 26, 24) : new THREE.Vector3(0, 17, 19);
+  const target = new THREE.Vector3(p.x, 0.5, p.z);
+  return { pos: target.clone().add(off), target };
+}
+function stationCamera() {
+  const st = panelSt, k = clamp(1.6 / effAspect, 1, 3.5);
+  let t = new THREE.Vector3(st.x, 0.5, st.z - (st.kind === 'region' ? 5 : 0));
+  if (st.kind === 'rockhall') t = new THREE.Vector3(ROCK.x + 6, 0.5, ROCK.z);
+  if (st.kind === 'asiahall') t = new THREE.Vector3(150, 0.5, 0);
+  return { pos: t.clone().add(new THREE.Vector3(0, 13, 15).multiplyScalar(k)), target: t };
+}
+function finaleCamera(time) {
+  const a = time * 0.25, r = 30;
+  const t = new THREE.Vector3(MAIN.x, 2, MAIN.z);
+  return { pos: new THREE.Vector3(MAIN.x + Math.sin(a) * r, 14, MAIN.z + Math.cos(a) * r), target: t };
+}
+function onResize() {
+  const w = innerWidth, h = innerHeight;
+  renderer.setSize(w, h); camera.aspect = w / h;
+  if (mode === 'exp') {
+    const panel = $('panel');
+    if (w >= 820) { const pw = panel.offsetWidth + 24; camera.setViewOffset(w, h, pw / 2, 0, w, h); effAspect = (w - pw) / h; }
+    else { const ph = panel.offsetHeight + 8; camera.setViewOffset(w, h, 0, ph / 2 - 30, w, h); effAspect = w / h; }
+  } else { camera.clearViewOffset(); effAspect = w / h; }
+  camera.updateProjectionMatrix();
+}
+addEventListener('resize', onResize);
+
+// ============================================================
+// 車燈
+// ============================================================
+const carLights = (() => {
+  const spots = [0.42, -0.42].map((z) => { const L = new THREE.SpotLight('#fff6d5', 0, 36, 0.55, 0.45, 1.6); L.position.set(1.35, 0.15, z); const tgt = new THREE.Object3D(); tgt.position.set(12, -1.4, z * 1.8); carMesh.add(L, tgt); L.target = tgt; return L; });
+  const headMat = new THREE.MeshStandardMaterial({ color: '#fff7cc', emissive: '#fff1a8', emissiveIntensity: 0 });
+  const tailMat = new THREE.MeshStandardMaterial({ color: '#7f1d1d', emissive: '#ef4444', emissiveIntensity: 0 });
+  [0.42, -0.42].forEach((z) => { const h = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.18, 0.32), headMat); h.position.set(1.42, 0.12, z); const t = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.14, 0.3), tailMat); t.position.set(-1.42, 0.12, z * 1.15); carMesh.add(h, t); });
+  return {
+    on: false,
+    set(v) { this.on = v; spots.forEach((s) => (s.intensity = v ? 70 : 0)); headMat.emissiveIntensity = v ? 2.5 : 0; tailMat.emissiveIntensity = v ? 1.8 : 0; $('btnLights').classList.toggle('off', !v); $('lightBtn').classList.toggle('on', v); },
+    toggle() { this.set(!this.on); sfx.click(); }
+  };
+})();
+$('btnLights').onclick = () => carLights.toggle();
+$('lightBtn').addEventListener('pointerdown', (e) => { e.preventDefault(); carLights.toggle(); });
+
+// ============================================================
+// 日夜變化：一整天 5 分鐘
+// ============================================================
+const DAY = { len: 300, dayEnd: 120, duskEnd: 150, nightEnd: 270 };
+const smooth = (x) => x * x * (3 - 2 * x);
+const COL = { skyDay: new THREE.Color('#a9dcec'), skyDusk: new THREE.Color('#f2a66b'), skyNight: new THREE.Color('#0b1530'), sun: new THREE.Color('#fff3dc'), sunDusk: new THREE.Color('#ff9a52'), moon: new THREE.Color('#9fb4ff'), hemiSkyDay: new THREE.Color('#ffffff'), hemiSkyNight: new THREE.Color('#4a5a8a'), hemiGndDay: new THREE.Color('#cbbf98'), hemiGndNight: new THREE.Color('#1f2438'), seaDay: new THREE.Color('#4fa3d1'), seaNight: new THREE.Color('#14294a') };
+const stars = (() => { const n = 700, pos = new Float32Array(n * 3); for (let i = 0; i < n; i++) { const a = rand() * Math.PI * 2, y = 0.08 + rand() * 0.92, r = Math.sqrt(1 - y * y); pos.set([Math.cos(a) * r * 400, y * 400, Math.sin(a) * r * 400], i * 3); } const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); const p = new THREE.Points(g, new THREE.PointsMaterial({ color: '#ffffff', size: 2, sizeAttenuation: false, transparent: true, opacity: 0, fog: false, depthWrite: false })); p.frustumCulled = false; scene.add(p); return p; })();
+const moon = new THREE.Mesh(new THREE.SphereGeometry(9, 24, 16), new THREE.MeshBasicMaterial({ color: '#f8f4dc', transparent: true, opacity: 0, fog: false }));
+scene.add(moon);
+const sky = { s: 0, name: '', hinted: false };
+const lightOffset = new THREE.Vector3(25, 45, 18);
+function skyAt(s) {
+  if (s < DAY.dayEnd) return { d: 1, dusk: 0, name: '☀️ 白天' };
+  if (s < DAY.duskEnd) { const p = (s - DAY.dayEnd) / 30; return { d: 1 - smooth(p), dusk: Math.sin(Math.PI * p), name: '🌇 黃昏' }; }
+  if (s < DAY.nightEnd) return { d: 0, dusk: 0, name: '🌙 夜晚' };
+  const p = (s - DAY.nightEnd) / 30; return { d: smooth(p), dusk: Math.sin(Math.PI * p) * 0.8, name: '🌅 清晨' };
+}
+function updateSky(dt) {
+  if (started) sky.s = (sky.s + dt) % DAY.len;
+  const { d, dusk, name } = skyAt(sky.s), night = 1 - d;
+  const sunUp = sky.s < DAY.duskEnd, p = sunUp ? sky.s / DAY.duskEnd : (sky.s - DAY.duskEnd) / (DAY.len - DAY.duskEnd);
+  const el = 0.3 + Math.sin(Math.PI * p) * 0.9, az = -1.1 + 2.2 * p;
+  lightOffset.set(Math.sin(az) * Math.cos(el), Math.sin(el), 0.35 + Math.cos(az) * Math.cos(el) * 0.5).normalize().multiplyScalar(70);
+  sun.color.copy(COL.moon).lerp(COL.sun, d).lerp(COL.sunDusk, dusk * 0.7); sun.intensity = 0.55 + 1.65 * d;
+  hemi.intensity = 0.55 + 1.05 * d; hemi.color.copy(COL.hemiSkyNight).lerp(COL.hemiSkyDay, d); hemi.groundColor.copy(COL.hemiGndNight).lerp(COL.hemiGndDay, d);
+  scene.background.copy(COL.skyNight).lerp(COL.skyDay, d).lerp(COL.skyDusk, dusk * 0.65); scene.fog.color.copy(scene.background);
+  seaMat.color.copy(COL.seaNight).lerp(COL.seaDay, d);
+  stars.position.copy(camera.position); stars.material.opacity = clamp(night * 1.3 - 0.3, 0, 1); stars.visible = stars.material.opacity > 0.01;
+  moon.material.opacity = clamp(night * 1.5 - 0.5, 0, 1); moon.visible = moon.material.opacity > 0.01; moon.position.copy(camera.position).addScaledVector(lightOffset.clone().normalize(), 320);
+  const glow = smooth(clamp(night * 1.25, 0, 1));
+  glowMats.forEach((m) => (m.emissiveIntensity = Math.max(m.emissiveIntensity, glow * 1.2)));
+  if (name !== sky.name) { sky.name = name; const [icon, text] = name.split(' '); $('clockLabel').innerHTML = `<span>${icon}</span><span class="clock-text">&nbsp;${text}</span>`; }
+  if (started && mode === 'drive' && night > 0.6 && !carLights.on && !sky.hinted) { sky.hinted = true; showToast(isTouch ? '🌙 天黑了，點「車燈」打開車燈！' : '🌙 天黑了，按 L 打開車燈！', 4500); }
+  if (night < 0.1) sky.hinted = false;
+}
+
+// ============================================================
+// 主迴圈
+// ============================================================
+const clock = new THREE.Clock();
+let started = false;
+function frame() {
+  const dt = Math.min(clock.getDelta(), 0.05), t = clock.elapsedTime;
+  driveInput(dt);
+  world.step(1 / 60, dt, 3);
+  const ip = chassisBody.interpolatedPosition;
+  carMesh.position.copy(ip); carMesh.quaternion.copy(chassisBody.interpolatedQuaternion);
+  const dx = ip.x - chassisBody.position.x, dy = ip.y - chassisBody.position.y, dz = ip.z - chassisBody.position.z;
+  vehicle.wheelInfos.forEach((wi, i) => { vehicle.updateWheelTransform(i); const wp = wi.worldTransform.position; wheelMeshes[i].position.set(wp.x + dx, wp.y + dy, wp.z + dz); wheelMeshes[i].quaternion.copy(wi.worldTransform.quaternion); });
+  crates.forEach((c) => { c.mesh.position.copy(c.body.interpolatedPosition); c.mesh.quaternion.copy(c.body.interpolatedQuaternion); });
+  checkFlip(dt);
+  tracks.update(dt, t, mode === 'drive' && (keys.Space || touchBrake));
+  if (started && mode === 'drive') { checkPads(t); checkKeys(); checkCrates(); checkBusStop(); checkFinale(); checkHomeBridge(); }
+  // 琴鍵亮過之後慢慢暗回去
+  keyTiles.forEach((k) => { if (k.m.emissiveIntensity > 0) k.m.emissiveIntensity = Math.max(0, k.m.emissiveIntensity - dt * 2.5); });
+  // 搖滾舞臺附近：樂團伴奏變大聲、背景音樂變小聲
+  if (started && audioPref.sfx && Object.values(prog.rock.placed).some(Boolean)) {
+    band.start();
+    const d = Math.hypot(chassisBody.position.x - ROCK.x, chassisBody.position.z - ROCK.z);
+    const v = mode === 'drive' ? clamp(1 - (d - 8) / 22, 0, 1) : 0;
+    band.setVol(v * 0.9);
+    if (mode === 'drive') bgm.setLevel(0.5 * (1 - v));
+  } else if (band.on && !audioPref.sfx) band.setVol(0);
+  // 舞臺燈閃爍（演唱會時更熱鬧）
+  stageLights.forEach((m, i) => (m.emissiveIntensity = mode === 'finale' ? 1 + Math.sin(t * 8 + i * 1.3) * 0.9 : 0.3 + 0.2 * Math.sin(t * 2 + i)));
+  show.update();
+  const want = mode === 'exp' && panelSt ? stationCamera() : mode === 'finale' ? finaleCamera(t) : driveCamera();
+  const k = 1 - Math.exp(-dt * (mode === 'drive' ? 4 : 2.5));
+  camPos.lerp(want.pos, k); camTarget.lerp(want.target, k);
+  camera.position.copy(camPos); camera.lookAt(camTarget);
+  const texel = 90 / 2048, sx = Math.round(camTarget.x / texel) * texel, sz = Math.round(camTarget.z / texel) * texel;
+  sun.position.set(sx + lightOffset.x, lightOffset.y, sz + lightOffset.z); sun.target.position.set(sx, 0, sz);
+  updateSky(dt);
+  drawMinimap();
+  renderer.render(scene, camera);
+  requestAnimationFrame(frame);
+}
+
+// ============================================================
+// 開場與說明
+// ============================================================
+const keyRows = isTouch
+  ? [['左下搖桿', '開車、轉彎'], ['煞車', '停車'], ['喇叭／車燈', '按喇叭、開車燈'], ['發光圓圈', '開進去後點提示，進站'], ['↺', '回到停車場']]
+  : [['<kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> 或 <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>', '開車、轉彎（↓ 倒車）'], ['<kbd>空白鍵</kbd>', '煞車'], ['<kbd>Enter</kbd>', '在發光圓圈上進站'], ['<kbd>H</kbd> ／ <kbd>L</kbd>', '按喇叭／開車燈'], ['<kbd>R</kbd>', '回到停車場'], ['<kbd>F</kbd> ／ <kbd>J</kbd>', '節奏遊戲：跺腳／拍手']];
+$('hKeys').innerHTML = keyRows.map(([k, d]) => `<div>${k}</div><div>${d}</div>`).join('');
+$('lGame').textContent = M.title;
+$('lTitle').textContent = M.storyTitle;
+const renderStory = () => ($('lSub').innerHTML = paras(Player.fill(M.story)));
+renderStory();
+Player.onChange(renderStory);
+const CERT = { island: M.title, sub: M.subtitle, icon: '🎸', color: '#e11d48', line: '收集世界的聲音，辦好了開幕演唱會' };
+Player.badge($('lPlayer'), { color: '#7c3aed', cert: () => prog.ended && CERT });
+Player.badge($('hPlayer'), { color: '#7c3aed', cert: () => prog.ended && CERT });   // 「?」說明裡也看得到（開場畫面只有第一次會出現）
+$('title').textContent = M.title;
+$('subtitle').textContent = M.subtitle;
+function renderTasks() {
+  $('lTasks').innerHTML = M.chapters.map((c, i) => { const d = chapterDone[c.id](); return `<li class="${d ? 'done' : ''}"><span class="num">${d ? '✔' : i + 1}</span><div><span class="t">${esc(c.title)}</span><div class="d">${esc(c.text)}</div></div></li>`; }).join('');
+}
+renderTasks();
+refreshWaiting();
+renderHud();
+function syncAudioButtons() { $('btnSound').classList.toggle('off', !audioPref.sfx); $('btnMusic').classList.toggle('off', !audioPref.music); }
+$('btnHelp').onclick = () => $('help').classList.remove('hidden');
+$('btnHelpClose').onclick = () => { $('help').classList.add('hidden'); canvas.focus(); };
+$('btnSound').onclick = () => { audioPref.sfx = !audioPref.sfx; saveAudioPref(); syncAudioButtons(); if (actx) applySfx(); sfx.click(); };
+$('btnMusic').onclick = () => { audioPref.music = !audioPref.music; saveAudioPref(); syncAudioButtons(); if (audioPref.music && started) { bgm.start(); bgm.setLevel(0.5); } else { bgm.stop(); } };
+$('btnReset').onclick = () => { if (mode === 'exp') closeStation(); resetCar(); };
+syncAudioButtons();
+updateCarForward();
+{ const c = driveCamera(); camPos.copy(c.pos); camTarget.copy(c.target); }
+onResize();
+requestAnimationFrame(frame);
+
+// 除錯用
+window.__music = { show, startFinale, sky, chassisBody, vehicle, prog, crates, STATIONS, PLACES, BUS_STOP, ROCK, MAIN, LANES, KEYS, resetCar, openStation, closeStation, INST, playSeq, allDone, save };
+
+const startBtn = $('btnStart');
+window.__musicReady = true;
+startBtn.disabled = false;
+startBtn.textContent = prog.introSeen ? '繼續巡演！' : '接下任務，出發！';
+startBtn.onclick = () => {
+  $('loader').classList.add('hidden');
+  started = true; sfx.click(); bgm.start(); canvas.focus();
+  const first = !prog.introSeen; prog.introSeen = true; save();
+  const who = Player.name;
+  showToast(first ? `${who}司機，先開到左邊的「世界舞臺」，或任選一個章節開始！` : arrivedFrom === 'physics' ? `${who}，歡迎來到「${M.title}」！往東開就是世界舞臺。` : `${who}，歡迎回到「${M.title}」！`, 4500);
+};
+// 故事開場只在第一次出現；之後直接開始（聲音等第一次按鍵或點畫面再開啟）
+// 還沒填名字的話，要等名字填好再開始
+if (prog.introSeen) Player.ensure(() => {
+  startBtn.onclick();
+  const wake = () => { if (actx && actx.state === 'suspended') actx.resume(); };
+  addEventListener('keydown', wake, { once: true });
+  addEventListener('pointerdown', wake, { once: true });
+});
+</script>
+</body>
+</html>
