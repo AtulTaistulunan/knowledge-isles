@@ -266,6 +266,7 @@
     <p class="sub" id="hIntro"></p>
     <div class="keys" id="hKeys"></div>
     <div id="hPlayer"></div>
+    <button class="cv-btn ghost" id="btnTour" style="width:100%;margin-bottom:10px">🎮 操作教學：試開看看</button>
     <button class="primary" id="btnHelpClose" style="width:100%">知道了</button>
   </div>
 </div>
@@ -1953,7 +1954,10 @@ const startGame = () => {
   if (arrivedFrom === 'physics') showToast(`${who}，歡迎來到「${C.title}」！先往東開到郵局，${next}`, 5000);
   else if (cur) showToast(first ? `${who}郵差，第一封信要寄到「${cur.name}」！看看右上角的小地圖，開車出發吧。` : `${who}，歡迎回來！${next}`, 4000);
 };
-startBtn.onclick = () => CamView.ensure(startGame);
+// 操作教學：這座島有的操作（第一次玩會在選完視角後出現；說明視窗裡也能再看）
+const TOUR = ['up', 'down', 'left', 'right', 'brake', 'enter', 'horn', 'lights', 'reset', 'view'], TOUR_OPTS = { enter: '坐時光機', reset: '回到郵局', pad: '時光機' };
+$('btnTour').onclick = () => { $('help').classList.add('hidden'); Controls.open(TOUR, TOUR_OPTS, () => canvas.focus()); };
+startBtn.onclick = () => CamView.ensure(() => Controls.ensure(TOUR, TOUR_OPTS, startGame));
 // 故事開場只在第一次來的時候出現；之後直接開始（還沒填名字的話，等名字填好再開始）。
 // 瀏覽器要等玩家按過鍵或點過畫面才能出聲音，所以那時再把音效打開。
 if (progress.introSeen) Player.ensure(() => {

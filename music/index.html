@@ -237,6 +237,7 @@
     <p class="sub">開著巡演巴士到各個發光的圓圈，按 Enter（手機點提示）就能進站。在琴鍵大道上開車會彈出音階；搖滾車庫的樂器箱要用巴士推上舞臺；職人城要到公車站載乘客。</p>
     <div class="keys" id="hKeys"></div>
     <div id="hPlayer"></div>
+    <button class="cv-btn ghost" id="btnTour" style="width:100%;margin-bottom:10px">🎮 操作教學：試開看看</button>
     <button class="primary" id="btnHelpClose" style="width:100%">知道了</button>
   </div>
 </div>
@@ -2058,7 +2059,10 @@ const startGame = () => {
   const who = Player.name;
   showToast(first ? `${who}司機，先開到左邊的「世界舞臺」，或任選一個章節開始！` : arrivedFrom === 'physics' ? `${who}，歡迎來到「${M.title}」！往東開就是世界舞臺。` : `${who}，歡迎回到「${M.title}」！`, 4500);
 };
-startBtn.onclick = () => CamView.ensure(startGame);
+// 操作教學：這座島有的操作（第一次玩會在選完視角後出現；說明視窗裡也能再看）
+const TOUR = ['up', 'down', 'left', 'right', 'brake', 'enter', 'horn', 'lights', 'reset', 'view', 'rhythm'], TOUR_OPTS = { enter: '進站', reset: '回到停車場', pad: '舞臺' };
+$('btnTour').onclick = () => { $('help').classList.add('hidden'); Controls.open(TOUR, TOUR_OPTS, () => canvas.focus()); };
+startBtn.onclick = () => CamView.ensure(() => Controls.ensure(TOUR, TOUR_OPTS, startGame));
 // 故事開場只在第一次出現；之後直接開始（聲音等第一次按鍵或點畫面再開啟）
 // 還沒填名字的話，要等名字填好再開始
 if (prog.introSeen) Player.ensure(() => {

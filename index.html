@@ -406,6 +406,7 @@
     <p class="sub">開著實驗車在島上探索，開到發光的圓圈上就能進入實驗站。每一站都要「先預測 → 做實驗 → 看解釋 → 小測驗」，完成後中央的燈塔會亮起來。往東邊開過長橋，就能到「拋物線島」做數學實驗；往西南方開過另一座橋，就能到「臺灣地名島」當地名郵差；往西邊開過光框長廊，就能到「新藝境島」看一場新媒體藝術展；往東南方開過玫瑰紅拱門的橋，就能到「環球音樂節島」。不知道怎麼走？按 <kbd>N</kbd> 或右上角的 🧭 選一座島，地上就會出現箭頭帶路。</p>
     <div class="keys" id="hKeys"></div>
     <div id="hPlayer"></div>
+    <button class="cv-btn ghost" id="btnTour" style="width:100%;margin-bottom:10px">🎮 操作教學：試開看看</button>
     <button class="primary" id="btnHelpClose" style="width:100%">知道了</button>
   </div>
 </div>
@@ -6431,7 +6432,10 @@ const startGame = () => {
   showToast(fromBridge ? `${Player.name}，歡迎回到「${C.title}」！` : `${Player.name}，歡迎來到知識群島！開車出發吧！`);
   stickers.refresh(true);
 };
-startBtn.onclick = () => CamView.ensure(startGame);
+// 操作教學：這座島有的操作（第一次玩會在選完視角後出現；說明視窗裡也能再看）
+const TOUR = ['up', 'down', 'left', 'right', 'boost', 'brake', 'enter', 'horn', 'lights', 'reset', 'nav', 'view'], TOUR_OPTS = {};
+$('btnTour').onclick = () => { $('help').classList.add('hidden'); Controls.open(TOUR, TOUR_OPTS, () => canvas.focus()); };
+startBtn.onclick = () => CamView.ensure(() => Controls.ensure(TOUR, TOUR_OPTS, startGame));
 // 從地理島或音樂島過橋回來：不用再看開場說明，直接開始（還沒填名字的話，等名字填好再開始）。
 // 瀏覽器要等玩家按過鍵或點過畫面才能出聲音，所以那時再把音效打開。
 if (fromBridge) Travel.arrive({ to: C.title, sub: C.subtitle, color: '#2563eb' });
