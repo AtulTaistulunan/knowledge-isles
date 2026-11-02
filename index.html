@@ -338,6 +338,7 @@
   <div class="btns">
     <div class="clock-badge card-ink" id="clockLabel">☀️ 白天</div>
     <button class="icon-btn off" id="btnLights" title="車燈開關（L）">💡</button>
+    <button class="icon-btn" id="btnCam" title="開車視角：追車／固定（V）">🎥</button>
     <button class="icon-btn" id="btnNav" title="選島導航（N）">🧭</button>
     <button class="icon-btn" id="btnHelp" title="操作說明">?</button>
     <button class="icon-btn" id="btnSound" title="音效開關">🔊</button>
@@ -441,6 +442,7 @@
 <!-- 玩家的名字與破關證書（五座島共用） -->
 <script src="player.js"></script>
 <script src="record.js"></script>
+<script src="camera-view.js"></script>
 
 <script type="module">
 import * as THREE from 'three';
@@ -5839,6 +5841,7 @@ addEventListener('keydown', (e) => {
   if (e.code === 'KeyH') horn();
   if (!e.repeat) pianoDigit(e.code);
   if (e.code === 'KeyL') carLights.toggle();
+  if (e.code === 'KeyV') CamView.toggle();
   if (e.code === 'KeyN') nav.openMenu();
 });
 addEventListener('keyup', (e) => { keys[e.code] = false; });
@@ -5964,10 +5967,17 @@ const camPos = new THREE.Vector3(), camTarget = new THREE.Vector3();
 let effAspect = innerWidth / innerHeight;
 // 展廳裡的鏡頭：比較低、比較近，從「俯瞰地圖」變成「站在展廳裡看」（indoorCam 在 0～1 之間慢慢變）
 let indoorCam = 0;
-function driveCamera() {
-  // 鏡頭固定角度，只跟著車子平移；不跟著車頭轉，轉彎時畫面不會甩動
+function driveCamera(dt) {
   const p = chassisBody.interpolatedPosition;
   const portrait = innerHeight > innerWidth;
+  // 追車視角：鏡頭在車子後上方，看向車頭前方（展廳裡一樣變低、變近）
+  if (CamView.chase) {
+    const h = CamView.heading(updateCarForward(), dt), L = THREE.MathUtils.lerp;
+    const back = L(portrait ? 22 : 18, 12, indoorCam), up = L(portrait ? 12 : 8, 5, indoorCam);
+    const target = new THREE.Vector3(p.x + h.x * 5, 0.5 + indoorCam * 1.2, p.z + h.z * 5);
+    return { pos: new THREE.Vector3(target.x - h.x * back, target.y + up, target.z - h.z * back), target };
+  }
+  // 固定視角：鏡頭固定角度，只跟著車子平移；不跟著車頭轉，轉彎時畫面不會甩動
   const off = portrait ? new THREE.Vector3(0, 26, 24) : new THREE.Vector3(0, 17, 19);
   off.lerp(portrait ? new THREE.Vector3(0, 17, 19) : new THREE.Vector3(0, 11, 15), indoorCam);
   const target = new THREE.Vector3(p.x, 0.5 + indoorCam * 1.2, p.z - indoorCam * 4);
@@ -6050,6 +6060,9 @@ const carLights = (() => {
   };
 })();
 $('btnLights').onclick = () => carLights.toggle();
+// 開車視角：🎥 再看一次說明動畫、重新選；V 鍵直接切換
+$('btnCam').onclick = () => CamView.open();
+CamView.onChange((chase) => showToast(chase ? '🎥 追車視角：鏡頭跟在車子後面，← 就是往左轉' : '🗺️ 固定視角：上方永遠是北方'));
 $('lightBtn').addEventListener('pointerdown', (e) => { e.preventDefault(); carLights.toggle(); });
 
 // ============================================================
@@ -6317,7 +6330,7 @@ function frame() {
   if (finale.group.visible) finale.mats.forEach(({ m, x }) => (m.emissiveIntensity = 0.5 + 0.9 * Math.max(0, Math.sin(t * 3 - x * 0.25))));
 
   // 鏡頭平滑跟隨
-  const want = mode === 'exp' && P.exp ? expCamera() : driveCamera();
+  const want = mode === 'exp' && P.exp ? expCamera() : driveCamera(dt);
   const k = 1 - Math.exp(-dt * (want.raw ? 10 : mode === 'exp' ? 3 : 4));
   camPos.lerp(want.pos, k);
   camTarget.lerp(want.target, k);
@@ -6341,9 +6354,9 @@ function frame() {
 // 開始畫面與說明
 // ============================================================
 const keyRows = isTouch
-  ? [['左下搖桿', '開車、轉彎'], ['煞車', '停車'], ['喇叭', '按喇叭'], ['車燈', '開關車燈（晚上用）'], ['發光圓圈', '開進去後點提示，進入實驗站'], ['🧭', '選島導航：地上出現箭頭帶路'], ['↺', '把車子放回起點'], ['🔊 ♫', '音效、音樂開關']]
+  ? [['左下搖桿', '開車、轉彎'], ['煞車', '停車'], ['喇叭', '按喇叭'], ['車燈', '開關車燈（晚上用）'], ['🎥', '換開車視角：追車／固定'], ['發光圓圈', '開進去後點提示，進入實驗站'], ['🧭', '選島導航：地上出現箭頭帶路'], ['↺', '把車子放回起點'], ['🔊 ♫', '音效、音樂開關']]
   : [['<kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> 或 <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>', '開車、轉彎'],
-     ['<kbd>Shift</kbd>（按住）', '加速（車尾會冒煙）'], ['<kbd>空白鍵</kbd>', '煞車'], ['<kbd>Enter</kbd>', '在發光圓圈上進入實驗站'], ['<kbd>H</kbd>', '按喇叭'], ['<kbd>L</kbd>', '開關車燈（晚上用）'], ['<kbd>R</kbd>', '把車子放回起點'], ['<kbd>N</kbd>', '選島導航：地上出現箭頭帶路'], ['<kbd>Esc</kbd>', '離開實驗站'], ['🔊 ♫', '右上角：音效、音樂開關']];
+     ['<kbd>Shift</kbd>（按住）', '加速（車尾會冒煙）'], ['<kbd>空白鍵</kbd>', '煞車'], ['<kbd>Enter</kbd>', '在發光圓圈上進入實驗站'], ['<kbd>H</kbd>', '按喇叭'], ['<kbd>L</kbd>', '開關車燈（晚上用）'], ['<kbd>V</kbd>', '換開車視角：追車／固定（右上角 🎥 可看說明）'], ['<kbd>R</kbd>', '把車子放回起點'], ['<kbd>N</kbd>', '選島導航：地上出現箭頭帶路'], ['<kbd>Esc</kbd>', '離開實驗站'], ['🔊 ♫', '右上角：音效、音樂開關']];
 const keysHTML = keyRows.map(([k, d]) => `<div>${k}</div><div>${d}</div>`).join('');
 // 電腦版的操作方法已經做在出發點的地上，開始畫面只留一句提示；觸控裝置仍列出按鈕說明
 $('lKeys').innerHTML = isTouch ? keysHTML
@@ -6408,7 +6421,8 @@ startBtn.disabled = false;
     setTimeout(done, 8000);
   }
 }
-startBtn.onclick = () => {
+// 第一次玩先選開車視角（看說明動畫），選過就直接開始
+const startGame = () => {
   $('loader').classList.add('hidden');
   started = true;
   sfx.click();
@@ -6417,6 +6431,7 @@ startBtn.onclick = () => {
   showToast(fromBridge ? `${Player.name}，歡迎回到「${C.title}」！` : `${Player.name}，歡迎來到知識群島！開車出發吧！`);
   stickers.refresh(true);
 };
+startBtn.onclick = () => CamView.ensure(startGame);
 // 從地理島或音樂島過橋回來：不用再看開場說明，直接開始（還沒填名字的話，等名字填好再開始）。
 // 瀏覽器要等玩家按過鍵或點過畫面才能出聲音，所以那時再把音效打開。
 if (fromBridge) Travel.arrive({ to: C.title, sub: C.subtitle, color: '#2563eb' });

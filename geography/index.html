@@ -211,6 +211,7 @@
     <div class="btns">
       <div class="clock-badge card-ink" id="clockLabel">☀️ 白天</div>
       <button class="icon-btn off" id="btnLights" title="車燈開關（L）">💡</button>
+      <button class="icon-btn" id="btnCam" title="開車視角：追車／固定（V）">🎥</button>
       <button class="icon-btn" id="btnHelp" title="操作說明">?</button>
       <button class="icon-btn" id="btnSound" title="音效開關">🔊</button>
       <button class="icon-btn" id="btnMusic" title="音樂開關">♫</button>
@@ -227,6 +228,7 @@
 <script src="../travel.js"></script>
 <script src="../player.js"></script>
 <script src="../record.js"></script>
+<script src="../camera-view.js"></script>
 
 <div id="touchUI">
   <div id="joy"><div id="joyKnob"></div></div>
@@ -1536,6 +1538,7 @@ addEventListener('keydown', (e) => {
   if (e.code === 'KeyR') resetCar();
   if (e.code === 'KeyH') horn();
   if (e.code === 'KeyL') carLights.toggle();
+  if (e.code === 'KeyV') CamView.toggle();
 });
 addEventListener('keyup', (e) => { keys[e.code] = false; });
 addEventListener('blur', () => { for (const k in keys) keys[k] = false; });
@@ -1647,11 +1650,17 @@ function drawMinimap() {
 // ============================================================
 const camPos = new THREE.Vector3(), camTarget = new THREE.Vector3();
 let effAspect = innerWidth / innerHeight;
-function driveCamera() {
+function driveCamera(dt) {
   const p = chassisBody.interpolatedPosition;
   const portrait = innerHeight > innerWidth;
-  const off = portrait ? new THREE.Vector3(0, 26, 24) : new THREE.Vector3(0, 17, 19);
+  let off = portrait ? new THREE.Vector3(0, 26, 24) : new THREE.Vector3(0, 17, 19);   // 固定視角：鏡頭永遠在車子南邊、朝北看
   const target = new THREE.Vector3(p.x, p.y, p.z);
+  // 追車視角：鏡頭在車子後上方，看向車頭前方
+  if (CamView.chase) {
+    const h = CamView.heading(updateCarForward(), dt), back = portrait ? 22 : 18;
+    target.x += h.x * 5; target.z += h.z * 5;
+    off = new THREE.Vector3(-h.x * back, portrait ? 12 : 8, -h.z * back);
+  }
   const pos = target.clone().add(off);
   // 山區：沿著鏡頭到車子的連線檢查地形，鏡頭一定要在山的上方，不會鑽進山裡
   for (let k = 0.3; k <= 1.0001; k += 0.175) {
@@ -1718,6 +1727,9 @@ const carLights = (() => {
   };
 })();
 $('btnLights').onclick = () => carLights.toggle();
+// 開車視角：🎥 再看一次說明動畫、重新選；V 鍵直接切換
+$('btnCam').onclick = () => CamView.open();
+CamView.onChange((chase) => showToast(chase ? '🎥 追車視角：鏡頭跟在車子後面，← 就是往左轉' : '🗺️ 固定視角：上方永遠是北方'));
 $('lightBtn').addEventListener('pointerdown', (e) => { e.preventDefault(); carLights.toggle(); });
 
 // ============================================================
@@ -1843,7 +1855,7 @@ function frame() {
     p.material.opacity = 0.45 * (1 - k);
   });
 
-  const want = mode === 'exp' ? timeCamera() : driveCamera();
+  const want = mode === 'exp' ? timeCamera() : driveCamera(dt);
   const k = 1 - Math.exp(-dt * (mode === 'exp' ? 2.5 : 4));
   camPos.lerp(want.pos, k);
   camTarget.lerp(want.target, k);
@@ -1865,9 +1877,9 @@ function frame() {
 // 開始畫面與說明
 // ============================================================
 const keyRows = isTouch
-  ? [['左下搖桿', '往上推前進、左右推轉彎'], ['煞車', '停車'], ['喇叭／車燈', '按喇叭、開車燈'], ['右上小地圖', '白點是送信地點，綠點是已送達'], ['↺', '回到郵局']]
+  ? [['左下搖桿', '往上推前進、左右推轉彎'], ['煞車', '停車'], ['喇叭／車燈', '按喇叭、開車燈'], ['🎥', '換開車視角：追車／固定'], ['右上小地圖', '白點是送信地點，綠點是已送達'], ['↺', '回到郵局']]
   : [['<kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> 或 <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>', '開車、轉彎（↓ 倒車）'],
-     ['<kbd>空白鍵</kbd>', '煞車'], ['<kbd>H</kbd> ／ <kbd>L</kbd>', '按喇叭／開車燈'], ['<kbd>R</kbd>', '回到郵局'],
+     ['<kbd>空白鍵</kbd>', '煞車'], ['<kbd>H</kbd> ／ <kbd>L</kbd>', '按喇叭／開車燈'], ['<kbd>V</kbd>', '換開車視角：追車／固定'], ['<kbd>R</kbd>', '回到郵局'],
      ['右上小地圖', '白點是送信地點，綠點是已送達'], ['<kbd>Enter</kbd>', '在時光機圓圈上出發']];
 const keysHTML = keyRows.map(([k, d]) => `<div>${k}</div><div>${d}</div>`).join('');
 $('hKeys').innerHTML = keysHTML;
@@ -1926,7 +1938,8 @@ window.__geoReady = true;
 startBtn.disabled = false;
 const anyProgress = Object.keys(progress.delivered).length || Object.keys(progress.landmarks).length || progress.time;
 startBtn.textContent = anyProgress ? '繼續送信！' : '接下任務，出發！';
-startBtn.onclick = () => {
+// 第一次玩先選開車視角（看說明動畫），選過就直接開始
+const startGame = () => {
   $('loader').classList.add('hidden');
   started = true;
   sfx.click();
@@ -1940,6 +1953,7 @@ startBtn.onclick = () => {
   if (arrivedFrom === 'physics') showToast(`${who}，歡迎來到「${C.title}」！先往東開到郵局，${next}`, 5000);
   else if (cur) showToast(first ? `${who}郵差，第一封信要寄到「${cur.name}」！看看右上角的小地圖，開車出發吧。` : `${who}，歡迎回來！${next}`, 4000);
 };
+startBtn.onclick = () => CamView.ensure(startGame);
 // 故事開場只在第一次來的時候出現；之後直接開始（還沒填名字的話，等名字填好再開始）。
 // 瀏覽器要等玩家按過鍵或點過畫面才能出聲音，所以那時再把音效打開。
 if (progress.introSeen) Player.ensure(() => {
