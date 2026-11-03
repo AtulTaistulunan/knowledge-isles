@@ -166,6 +166,22 @@
   .checks span { font-size: 13px; padding: 3px 8px; border-radius: 999px; background: #f1f5f9; color: var(--muted); }
   .checks span.ok { background: #dcfce7; color: #166534; font-weight: 700; }
   .checks span.star.ok { background: #fef3c7; color: #92400e; }
+  /* 任務清單：實驗裡的 .checks 搬到最上面的任務框，做完一項就打勾 */
+  .checks.mirrored { display: none; }
+  .goals { margin-top: 8px; padding-top: 8px; border-top: 1.5px dashed color-mix(in srgb, var(--c) 45%, transparent); font-family: var(--ui-font); }
+  .goals-head { font-size: 15px; font-weight: 900; margin-bottom: 2px; }
+  .goals-head b { color: var(--c); }
+  .goal { display: flex; align-items: center; gap: 8px; padding: 4px 6px; margin: 0 -6px; border-radius: 8px; font-size: 15px; font-weight: 700; color: var(--ink); }
+  .goal i { flex: 0 0 22px; height: 22px; border-radius: 6px; border: 2.5px solid var(--c); background: #fff; font-style: normal; color: #fff; font-size: 14px; line-height: 17px; text-align: center; }
+  .goal.ok { color: #166534; }
+  .goal.ok i { background: var(--ok); border-color: var(--ok); }
+  .goal.star i { border-radius: 50%; border-color: #f59e0b; }
+  .goal.star.ok { color: #92400e; }
+  .goal.star.ok i { background: #f59e0b; }
+  .goal small { margin-left: 2px; font-size: 11px; color: #92400e; background: #fef3c7; border-radius: 999px; padding: 1px 7px; white-space: nowrap; }
+  .goal.just { animation: goalPop .7s ease-out; }
+  @keyframes goalPop { 0% { background: transparent; } 30% { background: #bbf7d0; transform: scale(1.04); } 100% { background: transparent; transform: none; } }
+  .goal-hint { margin: 6px 0 0; font-size: 13px; color: var(--muted); text-align: right; }
   /* ---------- 藝術島：展覽風格的面板（白底、細線、襯線字，像美術館的作品標籤） ---------- */
   body.gallery #panel {
     background: #fafaf9; border: 1px solid #a8a29e; border-radius: 3px; box-shadow: 0 12px 32px rgba(28, 25, 23, .28);
@@ -5688,6 +5704,42 @@ function panelRefresh() {
   const btn = document.getElementById('toExplain');
   if (btn && P.exp) btn.disabled = !P.exp.done();
   if (P.exp && P.exp.syncControls) P.exp.syncControls();
+  goalHint();
+}
+// 任務清單：每個實驗把要做的事寫在 .checks 裡（✔／○ 開頭）。這裡把它搬一份到最上面的任務框，
+// 做完一項就打勾、跳提示；「看解釋」按鈕還不能按時，下面寫還差哪些。★ 開頭的是加分挑戰，不算必做。
+let goalObs = null, goalNext = '';
+function watchGoals(next) {
+  if (goalObs) goalObs.disconnect();
+  goalNext = next;
+  const src = $('expCtl') && $('expCtl').querySelector('.checks'), box = $('goals');
+  if (!src || !box) { goalHint(); return; }
+  src.classList.add('mirrored');
+  let prev = null;
+  const sync = () => {
+    const items = [...src.children].map((s) => ({ ok: s.classList.contains('ok'), star: s.classList.contains('star'), text: s.textContent.replace(/^[✔○★☆]\s*/, '') }));
+    const need = items.filter((it) => !it.star), got = need.filter((it) => it.ok).length;
+    box.hidden = !items.length;
+    box.innerHTML = `<div class="goals-head">🎯 要完成的任務 <b>${got} / ${need.length}</b></div>` +
+      items.map((it, k) => `<div class="goal ${it.ok ? 'ok' : ''} ${it.star ? 'star' : ''} ${it.ok && prev && prev[k] && !prev[k].ok ? 'just' : ''}">` +
+        `<i>${it.ok ? (it.star ? '★' : '✔') : ''}</i><span>${esc(it.text)}</span>${it.star ? '<small>加分挑戰</small>' : ''}</div>`).join('');
+    if (prev) items.forEach((it, k) => {
+      if (!it.ok || !prev[k] || prev[k].ok) return;
+      sfx.ok();
+      showToast(it.star ? `★ 挑戰成功：${it.text}` : got === need.length ? `🎉 任務全部完成！可以按「${goalNext} →」了` : `🎯 完成任務：${it.text}（${got} / ${need.length}）`);
+    });
+    prev = items;
+    goalHint();
+  };
+  sync();
+  goalObs = new MutationObserver(sync);
+  goalObs.observe(src, { childList: true, subtree: true, characterData: true, attributes: true });
+}
+function goalHint() {
+  const h = document.getElementById('goalHint'), btn = document.getElementById('toExplain');
+  if (!h || !btn) return;
+  const left = [...document.querySelectorAll('#goals .goal:not(.ok):not(.star) span')].map((s) => s.textContent);
+  h.textContent = !btn.disabled ? '' : left.length ? `還差：${left.join('、')}` : `先完成上面的任務，才能「${goalNext}」`;
 }
 function renderPanel() {
   const st = P.st, body = $('pBody');
@@ -5716,9 +5768,11 @@ function renderPanel() {
   }
 
   if (P.step === 'exp') {
-    body.innerHTML = `<div class="task">${esc(st.task)}</div><div id="expCtl"></div>` +
-      `<div class="row"><button class="primary" id="toExplain" ${P.exp.done() ? '' : 'disabled'}>${gal ? `${SN.explain} →` : '看解釋 →'}</button></div>`;
+    body.innerHTML = `<div class="task">${esc(st.task)}<div class="goals" id="goals" hidden></div></div><div id="expCtl"></div>` +
+      `<div class="row"><button class="primary" id="toExplain" ${P.exp.done() ? '' : 'disabled'}>${gal ? `${SN.explain} →` : '看解釋 →'}</button></div>` +
+      `<div class="goal-hint" id="goalHint"></div>`;
     P.exp.mount($('expCtl'));
+    watchGoals(gal ? SN.explain : '看解釋');
     $('toExplain').onclick = () => go('explain');
   }
 
