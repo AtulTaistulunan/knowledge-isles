@@ -28,15 +28,13 @@
     '.cv-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}',
     '.cv-card{display:flex;flex-direction:column;border:2px solid #e2e8f0;border-radius:14px;padding:10px;background:#fff}',
     '.cv-card.now{border-color:#2563eb}',
-    '.cv-card h3{margin:0 0 6px;font-size:18px;font-weight:900;display:flex;align-items:center;gap:6px}',
+    '.cv-card h3{margin:0;font-size:19px;font-weight:900;display:flex;align-items:center;gap:6px}',
     '.cv-card h3 small{font-size:12px;font-weight:700;color:#2563eb;border:1.5px solid #2563eb;border-radius:999px;padding:1px 8px}',
+    '.cv-tag{margin:2px 0 8px;font-size:14px;font-weight:700;color:#57534e}',
     '.cv-card svg{width:100%;aspect-ratio:4/3;display:block;border-radius:10px;border:1.5px solid #1e293b;background:#bfe3a5}',
-    '.cv-keys{display:flex;justify-content:center;gap:6px;margin:8px 0 4px}',
-    '.cv-keys span{min-width:34px;padding:3px 0;text-align:center;font-weight:900;border:2px solid #cbd5e1;border-bottom-width:4px;border-radius:8px;color:#94a3b8;background:#f8fafc;transition:all .12s}',
-    '.cv-keys span.on{border-color:#1e293b;color:#fff;background:#f97316;transform:translateY(2px);border-bottom-width:2px}',
-    '.cv-say{min-height:42px;margin:0 0 6px;font-size:13px;line-height:1.6;text-align:center;font-weight:700;color:#475569}',
-    '.cv-say b{color:#dc2626}',
-    '.cv-card ul{margin:0 0 10px;padding-left:18px;font-size:14px;line-height:1.7;color:#44403c;font-family:"Iansui","Noto Sans TC",serif;flex:1}',
+    '.cv-say{display:flex;align-items:center;justify-content:center;gap:8px;height:40px;margin:4px 0 6px;font-size:15px;font-weight:700;color:#334155}',
+    '.cv-say kbd{min-width:32px;padding:2px 0;text-align:center;font:inherit;font-weight:900;color:#fff;background:#f97316;border:2px solid #1e293b;border-radius:8px}',
+    '.cv-say.warn{color:#dc2626}',
     '.cv-btn{font:inherit;font-size:16px;font-weight:900;padding:10px 12px;border-radius:12px;border:2px solid #1e293b;cursor:pointer;background:#2563eb;color:#fff;box-shadow:3px 3px 0 #1e293b}',
     '.cv-btn:active{transform:translate(2px,2px);box-shadow:1px 1px 0 #1e293b}',
     '.cv-tip{margin:12px 0 0;text-align:center;font-size:13px;color:#78716c}',
@@ -70,7 +68,7 @@
 
   function demo(svg, chase) {
     svg.setAttribute('viewBox', '-50 -37.5 100 75');
-    svg.innerHTML = '<g class="w">' + mapSVG() + (chase ? '' : '<g class="c">' + CAR + '</g>') + '</g>' +
+    svg.innerHTML = '<g class="w">' + mapSVG(true) + (chase ? '' : '<g class="c">' + CAR + '</g>') + '</g>' +
       (chase ? '<g transform="translate(0 20) rotate(-90) scale(1.25)">' + CAR + '</g>' : '') +
       '<g transform="translate(-41 -28)"><circle r="6.5" fill="#fffdf7" stroke="#1e293b" stroke-width=".8"/><g class="n"><path d="M0 -5 L2.2 0 L-2.2 0Z" fill="#dc2626"/><text y="4.6" font-size="4.6" font-weight="900" text-anchor="middle" fill="#1e293b">北</text></g></g>';
     return { w: svg.querySelector('.w'), c: svg.querySelector('.c'), n: svg.querySelector('.n') };
@@ -79,28 +77,28 @@
   function chooser(cancelable, done) {
     var wrap = document.createElement('div');
     wrap.className = 'cv-wrap';
-    function card(id, title, items) {
+    function card(id, title, tag) {
       return '<div class="cv-card' + (cancelable && mode === id ? ' now' : '') + '" data-v="' + id + '">' +
         '<h3>' + title + (cancelable && mode === id ? '<small>現在用這個</small>' : '') + '</h3>' +
+        '<div class="cv-tag">' + tag + '</div>' +
         '<svg xmlns="' + SVGNS + '" role="img" aria-label="' + title + '的示範動畫"></svg>' +
-        '<div class="cv-keys"><span data-k="L">←</span><span data-k="U">↑</span><span data-k="R">→</span></div>' +
-        '<div class="cv-say"></div><ul>' + items.map(function (s) { return '<li>' + s + '</li>'; }).join('') + '</ul>' +
-        '<button type="button" class="cv-btn">用' + title + '</button></div>';
+        '<div class="cv-say"></div>' +
+        '<button type="button" class="cv-btn">選這個</button></div>';
     }
     wrap.innerHTML = '<div class="cv-box" role="dialog" aria-modal="true">' +
       '<h2>選一種開車視角</h2>' +
-      '<p>兩種視角的按鍵都一樣：↑ 前進、← → 轉彎。差別在「畫面怎麼動」，看看下面的動畫，選一個你覺得好開的。</p>' +
+      '<p>按鍵都一樣，差別在畫面怎麼動。</p>' +
       '<div class="cv-grid">' +
-      card('chase', '追車視角', ['鏡頭跟在車子後面，<b>車頭永遠朝上</b>', '按 ← 一定往左轉，像玩賽車遊戲', '畫面會跟著轉，地上的字有時是倒的']) +
-      card('fixed', '固定視角', ['鏡頭不動，<b>上方永遠是北方</b>，像看地圖', '車子往下開時，按 ← 會往畫面右邊轉', '畫面不會轉，地上的字都是正的']) +
-      '</div><p class="cv-tip">之後隨時可以按右上角 🎥' + (matchMedia('(pointer: coarse)').matches ? '' : ' 或 <b>V</b> 鍵') + ' 換視角。</p></div>';
+      card('chase', '追車視角', '鏡頭跟著車子轉，車頭永遠朝上') +
+      card('fixed', '固定視角', '畫面像地圖，上方永遠是北方') +
+      '</div><p class="cv-tip">之後可以按右上角 🎥' + (matchMedia('(pointer: coarse)').matches ? '' : ' 或 V 鍵') + ' 再換</p></div>';
     document.body.appendChild(wrap);
     // 視窗開著的時候，不要讓遊戲收到按鍵
     ['keydown', 'keyup', 'keypress'].forEach(function (t) { wrap.addEventListener(t, function (e) { if (e.code === 'Escape' && cancelable) close(); e.stopPropagation(); }); });
 
     var cards = Array.prototype.slice.call(wrap.querySelectorAll('.cv-card')).map(function (el) {
       var chase = el.dataset.v === 'chase';
-      return { el: el, chase: chase, d: demo(el.querySelector('svg'), chase), keys: el.querySelectorAll('.cv-keys span'), say: el.querySelector('.cv-say') };
+      return { el: el, chase: chase, d: demo(el.querySelector('svg'), chase), say: el.querySelector('.cv-say'), last: '' };
     });
     var raf = 0, t0 = performance.now();
     function frame(now) {
@@ -110,21 +108,24 @@
       var turn = (v.x * a.y - v.y * a.x) / Math.pow(v.x * v.x + v.y * v.y, 1.5) * 40;   // >0 右轉、<0 左轉
       var key = turn > 0.35 ? 'R' : turn < -0.35 ? 'L' : 'U';
       var s = Math.sin(ang * Math.PI / 180), down = s > 0.45, up = s < -0.45;   // 車頭朝畫面下方／上方
+      // 動畫下方只有一行：現在按的鍵＋車子在畫面上往哪裡轉（固定視角車頭朝下時用紅字提醒左右相反）
+      var k = key === 'L' ? '←' : key === 'R' ? '→' : '↑', side = key === 'L' ? '左' : '右', flip = key === 'L' ? '右' : '左';
       cards.forEach(function (c) {
+        var text, warn = false;
         if (c.chase) {
           var r = -ang - 90;
           c.d.w.setAttribute('transform', 'translate(0 20) rotate(' + r.toFixed(2) + ') translate(' + (-p.x).toFixed(2) + ' ' + (-p.y).toFixed(2) + ')');
           c.d.n.setAttribute('transform', 'rotate(' + r.toFixed(2) + ')');
-          c.say.innerHTML = key === 'L' ? '按 ←：車子往<b>畫面左邊</b>轉' : key === 'R' ? '按 →：車子往<b>畫面右邊</b>轉' : '按 ↑：往前開（車頭朝上）';
+          text = key === 'U' ? '直直往前' : '往畫面' + side + '邊轉';
         } else {
           c.d.c.setAttribute('transform', 'translate(' + p.x.toFixed(2) + ' ' + p.y.toFixed(2) + ') rotate(' + ang.toFixed(2) + ')');
-          var k = key === 'L' ? '←' : '→';
-          c.say.innerHTML = key === 'U' ? '按 ↑：往車頭的方向開' + (down ? '（現在車頭朝下）' : '') :
-            down ? '按 ' + k + '：車子卻往<b>畫面' + (key === 'L' ? '右' : '左') + '邊</b>轉<br>（車頭朝下，左右相反）' :
-            up ? '按 ' + k + '：車子往畫面' + (key === 'L' ? '左' : '右') + '邊轉' :
-            '按 ' + k + '：往車頭的' + (key === 'L' ? '左' : '右') + '手邊轉';
+          if (key === 'U') text = '往車頭的方向開';
+          else if (down) { text = '卻往畫面' + flip + '邊轉！'; warn = true; }
+          else if (up) text = '往畫面' + side + '邊轉';
+          else text = '往車頭的' + side + '手邊轉';
         }
-        Array.prototype.forEach.call(c.keys, function (k) { k.classList.toggle('on', k.dataset.k === key); });
+        var html = '<kbd>' + k + '</kbd>' + text;
+        if (html !== c.last) { c.last = html; c.say.innerHTML = html; c.say.classList.toggle('warn', warn); }
       });
       raf = requestAnimationFrame(frame);
     }
